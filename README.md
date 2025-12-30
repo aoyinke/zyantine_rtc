@@ -8,7 +8,7 @@
 - 实时音频采集和传输
 - AI语音识别（STT）- 使用OpenAI Whisper
 - AI语音合成（TTS）- 使用火山引擎豆包语音合成
-- AI对话 - 使用OpenAI GPT模型
+- AI对话 - 使用自衍体 AI 系统
 - 语音活动检测（VAD）
 - 现代化的Web界面设计
 - 实时状态反馈和动态提示
@@ -17,7 +17,7 @@
 
 - Python 3.8+
 - 麦克风和扬声器
-- OpenAI API密钥
+- 自衍体 API 服务（本地运行或远程）
 - 火山引擎API密钥（用于TTS）
 
 ## 安装步骤
@@ -39,9 +39,18 @@ cp .env.example .env
 编辑 `.env` 文件，设置你的API密钥：
 
 ```
-OPENAI_API_KEY=your_openai_api_key_here
+ZYANTINE_BASE_URL=http://localhost:8000
 VOLCENGINE_APP_ID=your_volcengine_app_id_here
 VOLCENGINE_ACCESS_TOKEN=your_volcengine_access_token_here
+```
+
+### 3. 启动自衍体 API 服务
+
+在另一个终端中启动自衍体 API 服务：
+
+```bash
+cd /path/to/zyantine_memo/zyantine_genisis
+python api_server.py
 ```
 
 ## 使用方法
@@ -49,12 +58,12 @@ VOLCENGINE_ACCESS_TOKEN=your_volcengine_access_token_here
 ### 启动Web服务器
 
 ```bash
-python -m uvicorn web_server:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn web_server:app --reload --host 0.0.0.0 --port 8765
 ```
 
 ### 访问Web界面
 
-打开浏览器访问：`http://localhost:8000`
+打开浏览器访问：`http://localhost:8765`
 
 ### 使用说明
 
@@ -85,11 +94,15 @@ zyantine_rtc/
 
 在 `.env` 文件中可以配置以下选项：
 
-### OpenAI配置
-- `OPENAI_API_KEY`: OpenAI API密钥（必需）
+### 自衍体 API 配置
+- `ZYANTINE_API_KEY`: 自衍体 API密钥（可选，如果API服务需要认证）
+- `ZYANTINE_BASE_URL`: 自衍体 API基础URL（默认：http://localhost:8000）
+- `LLM_MODEL`: 对话模型（默认：zyantine-v1，可选：zyantine-enhanced）
+
+### OpenAI配置（仅用于STT）
+- `OPENAI_API_KEY`: OpenAI API密钥（用于Whisper语音识别）
 - `OPENAI_BASE_URL`: OpenAI API基础URL（可选）
 - `STT_MODEL`: 语音识别模型（默认：whisper-1）
-- `LLM_MODEL`: 对话模型（默认：gpt-4o）
 
 ### 火山引擎配置
 - `VOLCENGINE_APP_ID`: 火山引擎应用ID（必需）
@@ -98,7 +111,7 @@ zyantine_rtc/
 
 ### 服务器配置
 - `SERVER_HOST`: 服务器主机（默认：0.0.0.0）
-- `SERVER_PORT`: 服务器端口（默认：8000）
+- `SERVER_PORT`: 服务器端口（默认：8765）
 
 ## 可用的TTS声音
 
@@ -151,9 +164,12 @@ AIConversation(
 2. 音频数据是否正确编码
 3. WAV文件头是否正确添加
 
-### API密钥错误
+### API连接失败
 
-确保 `.env` 文件中的API密钥已正确设置。
+确保自衍体 API 服务正在运行：
+1. 检查 API 服务是否已启动
+2. 检查 `.env` 文件中的 `ZYANTINE_BASE_URL` 是否正确
+3. 查看浏览器控制台或服务器日志获取详细错误信息
 
 ## 技术架构
 
@@ -162,7 +178,7 @@ AIConversation(
 - **WebSocket**: 实时通信
 - **OpenAI Whisper**: 语音识别
 - **火山引擎TTS**: 语音合成
-- **OpenAI GPT**: 对话生成
+- **自衍体 AI**: 对话生成
 
 ### 前端
 - **HTML5/CSS3**: 现代化界面设计

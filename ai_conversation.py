@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from typing import List, Dict, Optional
-from openai import OpenAI
+import aiohttp
 import os
 from dotenv import load_dotenv
 
@@ -16,21 +16,13 @@ class AIConversation:
         self,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        model: str = "gpt-4.1-nano-2025-04-14",
+        model: str = "zyantine-v1",
         system_prompt: str = "你是一个友好的AI助手，可以进行自然的对话。"
     ):
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY", "sk-wiHpoarpNTHaep0t54852a32A75a4d6986108b3f6eF7B7B9")
-        self.base_url = base_url or os.getenv("OPENAI_BASE_URL", "https://openkey.cloud/v1")
+        self.api_key = api_key or os.getenv("ZYANTINE_API_KEY", "")
+        self.base_url = base_url or os.getenv("ZYANTINE_BASE_URL", "http://localhost:8001")
         self.model = model
         self.system_prompt = system_prompt
-
-        if not self.api_key:
-            raise ValueError("OpenAI API key is required")
-
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url=self.base_url
-        )
 
         self.conversation_history: List[Dict[str, str]] = [
             {"role": "system", "content": self.system_prompt}
@@ -43,14 +35,28 @@ class AIConversation:
                 "content": user_message
             })
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=self.conversation_history,
-                temperature=0.7,
-                max_tokens=500
-            )
+            url = f"{self.base_url}/v1/chat/completions"
+            headers = {"Content-Type": "application/json"}
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
 
-            assistant_message = response.choices[0].message.content
+            payload = {
+                "model": self.model,
+                "messages": self.conversation_history,
+                "temperature": 0.7,
+                "max_tokens": 500
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"API error: {response.status} - {error_text}")
+                        return "抱歉，我遇到了一些问题，请稍后再试。"
+
+                    data = await response.json()
+                    assistant_message = data["choices"][0]["message"]["content"]
+
             self.conversation_history.append({
                 "role": "assistant",
                 "content": assistant_message
