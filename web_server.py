@@ -75,6 +75,11 @@ async def get():
         return HTMLResponse(content=f.read())
 
 
+@app.get("/favicon.ico")
+async def favicon():
+    return HTMLResponse(status_code=204)
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     global system, recorded_audio_chunks
@@ -178,33 +183,24 @@ async def handle_stop_recording(websocket: WebSocket):
         "status": "stopped",
         "message": "停止录音"
     }, websocket)
+    
+    await process_speech_and_respond(websocket)
 
 
 async def handle_audio_data(websocket: WebSocket, data: dict):
     global recorded_audio_chunks
     
-    logger.info(f"handle_audio_data called")
-    
-    if system:
-        try:
-            audio_base64 = data.get("audio_data", "")
-            logger.info(f"Received audio data, base64 length: {len(audio_base64)}")
-            
+    try:
+        audio_base64 = data.get("audio_data", "")
+        if audio_base64:
             audio_bytes = base64.b64decode(audio_base64)
-            logger.info(f"Decoded audio bytes length: {len(audio_bytes)}")
-            
             audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
-            logger.info(f"Created audio array with shape: {audio_array.shape}")
-            
             recorded_audio_chunks.append(audio_array)
-            logger.info(f"Total audio chunks: {len(recorded_audio_chunks)}")
-            
-            await process_speech_and_respond(websocket)
-        
-        except Exception as e:
-            logger.error(f"Audio processing error: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.info(f"Received audio chunk, size: {len(audio_array)}, total chunks: {len(recorded_audio_chunks)}")
+    except Exception as e:
+        logger.error(f"Audio data handling error: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 async def process_speech_and_respond(websocket: WebSocket):
