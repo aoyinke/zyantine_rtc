@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 语音助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .status-display {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .status-display.processing {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+
+        .status-display.generating {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+
+        .status-display.synthesizing {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        }
+
+        .status-display.error {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        }
+
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .status-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .status-subtext {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .recording-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 48px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .recording-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .recording-button:active {
+            transform: scale(0.95);
+        }
+
+        .recording-button.recording {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 10px 30px rgba(244, 67, 54, 0.4);
+            }
+            50% {
+                box-shadow: 0 10px 50px rgba(244, 67, 54, 0.8);
+            }
+        }
+
+        .recording-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            animation: none;
+        }
+
+        .button-label {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+        }
+
+        .connection-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+            transition: all 0.3s ease;
+        }
+
+        .connection-dot.connected {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .connection-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .volume-control {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+        }
+
+        .volume-control label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .volume-control input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .volume-control input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .audio-visualizer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 40px;
+            margin-bottom: 20px;
+        }
+
+        .audio-bar {
+            width: 6px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px;
+            transition: height 0.1s ease;
+        }
+
+        .audio-visualizer.active .audio-bar {
+            animation: audioWave 0.5s ease-in-out infinite;
+        }
+
+        @keyframes audioWave {
+            0%, 100% {
+                height: 10px;
+            }
+            50% {
+                height: 35px;
+            }
+        }
+
+        .audio-visualizer.active .audio-bar:nth-child(1) { animation-delay: 0s; }
+        .audio-visualizer.active .audio-bar:nth-child(2) { animation-delay: 0.1s; }
+        .audio-visualizer.active .audio-bar:nth-child(3) { animation-delay: 0.2s; }
+        .audio-visualizer.active .audio-bar:nth-child(4) { animation-delay: 0.3s; }
+        .audio-visualizer.active .audio-bar:nth-child(5) { animation-delay: 0.4s; }
+        .audio-visualizer.active .audio-bar:nth-child(6) { animation-delay: 0.3s; }
+        .audio-visualizer.active .audio-bar:nth-child(7) { animation-delay: 0.2s; }
+        .audio-visualizer.active .audio-bar:nth-child(8) { animation-delay: 0.1s; }
+        .audio-visualizer.active .audio-bar:nth-child(9) { animation-delay: 0s; }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            .title {
+                font-size: 20px;
+            }
+
+            .recording-button {
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">AI 语音助手</h1>
+        <p class="subtitle">点击按钮开始语音对话</p>
+
+        <div class="connection-indicator">
+            <div class="connection-dot" id="connectionDot"></div>
+            <span class="connection-text" id="connectionText">未连接</span>
+        </div>
+
+        <div class="status-display" id="statusDisplay">
+            <div class="status-icon" id="statusIcon">🎤</div>
+            <div class="status-text" id="statusText">准备就绪</div>
+            <div class="status-subtext" id="statusSubtext">点击下方按钮开始录音</div>
+        </div>
+
+        <div class="audio-visualizer" id="audioVisualizer">
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+        </div>
+
+        <button class="recording-button" id="recordBtn" onclick="toggleRecording()" disabled>
+            🎤
+        </button>
+        <p class="button-label" id="buttonLabel">开始录音</p>
+
+        <div class="volume-control">
+            <label>音量</label>
+            <input type="range" id="volumeSlider" min="0" max="100" value="80" oninput="updateVolume(this.value)">
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnected = false;
+        let isRecording = false;
+        let audioContext = null;
+        let scriptProcessor = null;
+        let mediaStream = null;
+        let audioChunks = [];
+        let volume = 0.8;
+
+        function connect() {
+            ws = new WebSocket(`ws://localhost:8000/ws`);
+
+            ws.onopen = () => {
+                ws.send(JSON.stringify({
+                    type: 'connect',
+                    signaling_url: 'ws://localhost:8765',
+                    client_id: 'web_client',
+                    room_id: 'web_room'
+                }));
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleMessage(data);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateStatus('error', '连接错误', '请检查网络连接后重试');
+            };
+
+            ws.onclose = () => {
+                isConnected = false;
+                updateConnectionStatus(false);
+                document.getElementById('recordBtn').disabled = true;
+            };
+        }
+
+        function handleMessage(data) {
+            console.log('Received message:', data);
+            
+            switch (data.type) {
+                case 'status':
+                    if (data.status === 'connected') {
+                        isConnected = true;
+                        updateConnectionStatus(true);
+                        document.getElementById('recordBtn').disabled = false;
+                        updateStatus('ready', '准备就绪', '点击下方按钮开始录音');
+                    } else if (data.status === 'disconnected') {
+                        isConnected = false;
+                        updateConnectionStatus(false);
+                        document.getElementById('recordBtn').disabled = true;
+                        updateStatus('error', '已断开连接', '请重新连接');
+                    } else if (data.status === 'processing') {
+                        updateStatus('processing', '正在识别语音...', '请稍候');
+                    } else if (data.status === 'generating') {
+                        updateStatus('generating', 'AI 正在思考...', '正在生成回复');
+                    } else if (data.status === 'synthesizing') {
+                        updateStatus('synthesizing', '正在生成语音...', '即将播放');
+                    } else if (data.status === 'stopped') {
+                        if (isRecording) {
+                            isRecording = false;
+                            updateRecordingButton(false);
+                        }
+                    }
+                    break;
+
+                case 'audio_response':
+                    playAudio(data.audio_data);
+                    break;
+
+                case 'error':
+                    updateStatus('error', '出错了', data.message);
+                    break;
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('connectionDot');
+            const text = document.getElementById('connectionText');
+
+            if (connected) {
+                dot.classList.add('connected');
+                text.textContent = '已连接';
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = '未连接';
+            }
+        }
+
+        function updateStatus(type, text, subtext) {
+            const display = document.getElementById('statusDisplay');
+            const icon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            const statusSubtext = document.getElementById('statusSubtext');
+
+            display.className = 'status-display';
+            if (type !== 'ready' && type !== 'error') {
+                display.classList.add(type);
+            }
+
+            switch (type) {
+                case 'ready':
+                    icon.textContent = '🎤';
+                    break;
+                case 'processing':
+                    icon.textContent = '👂';
+                    break;
+                case 'generating':
+                    icon.textContent = '🤔';
+                    break;
+                case 'synthesizing':
+                    icon.textContent = '🔊';
+                    break;
+                case 'error':
+                    icon.textContent = '❌';
+                    display.classList.add('error');
+                    break;
+            }
+
+            statusText.textContent = text;
+            statusSubtext.textContent = subtext;
+        }
+
+        function updateRecordingButton(recording) {
+            const btn = document.getElementById('recordBtn');
+            const label = document.getElementById('buttonLabel');
+            const visualizer = document.getElementById('audioVisualizer');
+
+            if (recording) {
+                btn.classList.add('recording');
+                btn.textContent = '⏹️';
+                label.textContent = '停止录音';
+                visualizer.classList.add('active');
+            } else {
+                btn.classList.remove('recording');
+                btn.textContent = '🎤';
+                label.textContent = '开始录音';
+                visualizer.classList.remove('active');
+            }
+        }
+
+        async function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        sampleRate: 16000,
+                        channelCount: 1
+                    }
+                });
+                
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    sampleRate: 16000
+                });
+                
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+                
+                audioChunks = [];
+                
+                scriptProcessor.onaudioprocess = (event) => {
+                    const inputData = event.inputBuffer.getChannelData(0);
+                    
+                    const pcmData = new Int16Array(inputData.length);
+                    for (let i = 0; i < inputData.length; i++) {
+                        pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+                    }
+                    
+                    audioChunks.push(pcmData);
+                };
+                
+                source.connect(scriptProcessor);
+                scriptProcessor.connect(audioContext.destination);
+                
+                isRecording = true;
+                updateRecordingButton(true);
+                updateStatus('ready', '正在录音...', '点击按钮停止录音');
+
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'start_recording' }));
+                }
+
+            } catch (error) {
+                console.error('Error starting recording:', error);
+                updateStatus('error', '录音失败', '请检查麦克风权限');
+            }
+        }
+
+        function stopRecording() {
+            console.log('stopRecording called, isRecording:', isRecording);
+            console.log('audioChunks length:', audioChunks.length);
+            
+            if (scriptProcessor) {
+                scriptProcessor.disconnect();
+                scriptProcessor = null;
+            }
+            
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            
+            isRecording = false;
+            updateRecordingButton(false);
+            updateStatus('processing', '正在识别语音...', '请稍候');
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                console.log('WebSocket is open, sending audio data...');
+                
+                if (audioChunks.length > 0) {
+                    const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+                    console.log('Total audio length:', totalLength);
+                    
+                    const combinedAudio = new Int16Array(totalLength);
+                    let offset = 0;
+                    
+                    for (const chunk of audioChunks) {
+                        combinedAudio.set(chunk, offset);
+                        offset += chunk.length;
+                    }
+                    
+                    const uint8Array = new Uint8Array(combinedAudio.buffer);
+                    let binary = '';
+                    const len = uint8Array.byteLength;
+                    for (let i = 0; i < len; i++) {
+                        binary += String.fromCharCode(uint8Array[i]);
+                    }
+                    const audioBase64 = btoa(binary);
+                    
+                    console.log('Audio base64 length:', audioBase64.length);
+                    
+                    ws.send(JSON.stringify({
+                        type: 'audio_data',
+                        audio_data: audioBase64
+                    }));
+                } else {
+                    console.log('No audio chunks to send');
+                }
+                
+                console.log('Sending stop_recording message...');
+                ws.send(JSON.stringify({ type: 'stop_recording' }));
+            } else {
+                console.log('WebSocket is not open or readyState:', ws ? ws.readyState : 'null');
+            }
+        }
+
+        function playAudio(audioBase64) {
+            try {
+                console.log('Starting audio playback...');
+                console.log('Base64 data length:', audioBase64.length);
+                
+                const audioBytes = atob(audioBase64);
+                console.log('Decoded bytes length:', audioBytes.length);
+                
+                const audioArray = new Uint8Array(audioBytes.length);
+                for (let i = 0; i < audioBytes.length; i++) {
+                    audioArray[i] = audioBytes.charCodeAt(i);
+                }
+
+                const audioBlob = new Blob([audioArray], { type: 'audio/wav' });
+                console.log('Audio blob size:', audioBlob.size, 'bytes');
+                
+                const audioUrl = URL.createObjectURL(audioBlob);
+                console.log('Audio URL:', audioUrl);
+                
+                const audio = new Audio(audioUrl);
+                audio.volume = volume;
+                
+                audio.onplay = () => {
+                    console.log('Audio playback started');
+                    updateStatus('synthesizing', '正在播放...', 'AI 回复中');
+                };
+                
+                audio.onended = () => {
+                    console.log('Audio playback ended');
+                    updateStatus('ready', '准备就绪', '点击下方按钮开始录音');
+                    URL.revokeObjectURL(audioUrl);
+                };
+                
+                audio.onerror = (error) => {
+                    console.error('Audio error event:', error);
+                    console.error('Audio error code:', audio.error);
+                    console.error('Audio error message:', audio.error ? audio.error.message : 'Unknown error');
+                    updateStatus('error', '播放失败', '音频格式不支持');
+                };
+
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('Audio play() succeeded');
+                    }).catch(error => {
+                        console.error('Audio play() failed:', error);
+                        updateStatus('error', '播放失败', error.message || '未知错误');
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error playing audio:', error);
+                updateStatus('error', '播放失败', '音频数据错误: ' + error.message);
+            }
+        }
+
+        function updateVolume(value) {
+            volume = value / 100;
+        }
+
+        window.onload = () => {
+            connect();
+        };
+
+        window.onbeforeunload = () => {
+            if (ws) {
+                ws.close();
+            }
+        };
+    </script>
+</body>
+</html>

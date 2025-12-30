@@ -1,22 +1,24 @@
-# AI RTC System
+# AI 语音助手系统
 
-一个基于Python的实时通信（RTC）系统，可以与AI进行语音对话。
+一个基于Python的纯语音交互AI助手系统，使用Web界面实现实时语音对话。
 
 ## 功能特性
 
+- 纯语音交互界面，无需文本输入
 - 实时音频采集和传输
-- WebRTC信令服务器（WebSocket）
 - AI语音识别（STT）- 使用OpenAI Whisper
-- AI语音合成（TTS）- 使用OpenAI TTS
+- AI语音合成（TTS）- 使用火山引擎豆包语音合成
 - AI对话 - 使用OpenAI GPT模型
 - 语音活动检测（VAD）
-- 支持多房间通信
+- 现代化的Web界面设计
+- 实时状态反馈和动态提示
 
 ## 系统要求
 
 - Python 3.8+
 - 麦克风和扬声器
 - OpenAI API密钥
+- 火山引擎API密钥（用于TTS）
 
 ## 安装步骤
 
@@ -28,7 +30,7 @@ pip install -r requirements.txt
 
 ### 2. 配置环境变量
 
-复制 `.env.example` 为 `.env` 并配置你的OpenAI API密钥：
+复制 `.env.example` 为 `.env` 并配置你的API密钥：
 
 ```bash
 cp .env.example .env
@@ -37,95 +39,93 @@ cp .env.example .env
 编辑 `.env` 文件，设置你的API密钥：
 
 ```
-OPENAI_API_KEY=your_actual_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+VOLCENGINE_APP_ID=your_volcengine_app_id_here
+VOLCENGINE_ACCESS_TOKEN=your_volcengine_access_token_here
 ```
 
 ## 使用方法
 
-### 方式一：使用启动脚本
+### 启动Web服务器
 
-**Linux/Mac:**
 ```bash
-chmod +x start.sh
-./start.sh
+python -m uvicorn web_server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Windows:**
-```cmd
-start.bat
-```
+### 访问Web界面
 
-### 方式二：手动启动
+打开浏览器访问：`http://localhost:8000`
 
-**1. 启动信令服务器：**
-```bash
-python signaling_server.py
-```
+### 使用说明
 
-**2. 在新的终端窗口启动AI RTC客户端：**
-```bash
-python ai_rtc_system.py
-```
+1. 点击录音按钮开始录音
+2. 对着麦克风说话
+3. 点击停止按钮结束录音
+4. 系统会自动识别语音、生成AI回复并播放语音
 
 ## 项目结构
 
 ```
 zyantine_rtc/
-├── signaling_server.py      # WebRTC信令服务器
-├── rtc_client.py            # RTC客户端基础类
-├── stt.py                   # 语音识别（STT）
-├── tts.py                   # 语音合成（TTS）
-├── ai_conversation.py       # AI对话管理
-├── ai_rtc_system.py         # AI RTC系统主程序
-├── requirements.txt         # Python依赖
-├── .env.example            # 环境变量示例
-├── start.sh                # Linux/Mac启动脚本
-└── start.bat               # Windows启动脚本
+├── web_server.py           # FastAPI Web服务器
+├── ai_rtc_system.py        # AI系统核心类
+├── stt.py                  # 语音识别（STT）
+├── tts.py                  # 语音合成（TTS）
+├── ai_conversation.py      # AI对话管理
+├── protocols.py            # WebSocket协议定义
+├── requirements.txt        # Python依赖
+├── .env.example           # 环境变量示例
+├── templates/
+│   └── index.html         # Web前端界面
+├── test_tts_voices.py     # TTS声音测试工具
+└── test_volcengine_tts.py # 火山引擎TTS测试工具
 ```
 
 ## 配置选项
 
 在 `.env` 文件中可以配置以下选项：
 
+### OpenAI配置
 - `OPENAI_API_KEY`: OpenAI API密钥（必需）
 - `OPENAI_BASE_URL`: OpenAI API基础URL（可选）
 - `STT_MODEL`: 语音识别模型（默认：whisper-1）
-- `TTS_MODEL`: 语音合成模型（默认：tts-1）
-- `TTS_VOICE`: 语音合成声音（默认：alloy）
 - `LLM_MODEL`: 对话模型（默认：gpt-4o）
+
+### 火山引擎配置
+- `VOLCENGINE_APP_ID`: 火山引擎应用ID（必需）
+- `VOLCENGINE_ACCESS_TOKEN`: 火山引擎访问令牌（必需）
+- `VOLCENGINE_VOICE_TYPE`: 语音类型（默认：zh_female_vv_uranus_bigtts）
+
+### 服务器配置
 - `SERVER_HOST`: 服务器主机（默认：0.0.0.0）
-- `SERVER_PORT`: 服务器端口（默认：8765）
+- `SERVER_PORT`: 服务器端口（默认：8000）
 
 ## 可用的TTS声音
 
-- alloy
-- echo
-- fable
-- onyx
-- nova
-- shimmer
+火山引擎支持多种语音类型，常用的包括：
 
-## 使用示例
+- `zh_female_vv_uranus_bigtts`: 女性声音（推荐）
+- `zh_male_vv_apollo_bigtts`: 男性声音
+- `zh_female_vv_mars_bigtts`: 女性声音
+- `zh_male_vv_mercury_bigtts`: 男性声音
 
-### 作为独立客户端使用
+你可以在 `tts.py` 中修改 `voice_type` 参数来更换声音。
 
-```python
-from ai_rtc_system import AIRTCSystem
-import asyncio
+## 测试工具
 
-async def main():
-    system = AIRTCSystem(
-        signaling_url="ws://localhost:8765",
-        client_id="my_client",
-        room_id="room_1"
-    )
-    
-    await system.start()
+### 测试TTS声音
 
-asyncio.run(main())
+```bash
+python test_tts_voices.py
 ```
 
-### 自定义AI角色
+### 测试火山引擎TTS
+
+```bash
+python test_volcengine_tts.py
+```
+
+## 自定义AI角色
 
 在 `ai_conversation.py` 中修改 `system_prompt`：
 
@@ -139,34 +139,36 @@ AIConversation(
 
 ### 麦克风权限问题
 
-确保应用程序有麦克风访问权限：
-- Mac: 系统偏好设置 > 安全性与隐私 > 麦克风
-- Linux: 检查音频设备权限
-- Windows: 隐私设置 > 麦克风
+确保浏览器有麦克风访问权限：
+- Chrome: 设置 > 隐私和安全 > 网站设置 > 麦克风
+- Safari: Safari > 偏好设置 > 网站 > 麦克风
+- Firefox: 选项 > 隐私与安全 > 权限 > 麦克风
 
-### PyAudio安装失败
+### 音频播放失败
 
-**Mac:**
-```bash
-brew install portaudio
-pip install pyaudio
-```
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get install python3-pyaudio
-```
-
-**Windows:**
-下载并安装 PyAudio 的wheel文件。
+如果音频无法播放，请检查：
+1. 浏览器控制台是否有错误信息
+2. 音频数据是否正确编码
+3. WAV文件头是否正确添加
 
 ### API密钥错误
 
-确保 `.env` 文件中的 `OPENAI_API_KEY` 已正确设置。
+确保 `.env` 文件中的API密钥已正确设置。
 
-## 停止系统
+## 技术架构
 
-按 `Ctrl+C` 停止运行中的服务。
+### 后端
+- **FastAPI**: Web框架
+- **WebSocket**: 实时通信
+- **OpenAI Whisper**: 语音识别
+- **火山引擎TTS**: 语音合成
+- **OpenAI GPT**: 对话生成
+
+### 前端
+- **HTML5/CSS3**: 现代化界面设计
+- **JavaScript**: 交互逻辑
+- **WebSocket API**: 实时通信
+- **Web Audio API**: 音频处理
 
 ## 许可证
 
