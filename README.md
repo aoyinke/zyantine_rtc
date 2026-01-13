@@ -126,16 +126,42 @@ zyantine_rtc/
 
 ## 测试工具
 
-### 测试TTS声音
+### 测试目录结构
 
-```bash
-python test_tts_voices.py
+所有测试文件都已整理到 `tests/` 目录中：
+
+```
+tests/
+├── __init__.py           # 测试包初始化
+├── test_stt.py           # 语音识别测试
+├── test_tts.py           # 语音合成测试
+├── test_tts_voices.py    # TTS声音测试
+├── test_volcengine_tts.py # 火山引擎TTS测试
+└── test_all.py           # 统一测试运行器
 ```
 
-### 测试火山引擎TTS
+### 运行测试
+
+#### 运行所有测试
 
 ```bash
-python test_volcengine_tts.py
+python -m tests.test_all
+```
+
+#### 运行特定测试
+
+```bash
+# 测试语音识别
+python -m tests.test_stt
+
+# 测试语音合成
+python -m tests.test_tts
+
+# 测试TTS声音
+python -m tests.test_tts_voices
+
+# 测试火山引擎TTS
+python -m tests.test_volcengine_tts
 ```
 
 ## 自定义AI角色

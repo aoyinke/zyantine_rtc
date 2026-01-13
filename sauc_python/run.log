@@ -1,0 +1,438 @@
+2026-01-11 21:47:54,091 - ERROR - Failed to connect to WebSocket: 403, message='Invalid response status', url='wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream'
+2026-01-11 21:47:54,091 - ERROR - Error in ASR execution: 403, message='Invalid response status', url='wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream'
+2026-01-11 21:47:54,091 - ERROR - ASR processing failed: 403, message='Invalid response status', url='wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream'
+2026-01-11 21:49:37,833 - ERROR - Failed to connect to WebSocket: 403, message='Invalid response status', url='wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream'
+2026-01-11 21:49:37,834 - ERROR - Error in ASR execution: 403, message='Invalid response status', url='wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream'
+2026-01-11 21:49:37,834 - ERROR - ASR processing failed: 403, message='Invalid response status', url='wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream'
+2026-01-11 21:51:42,358 - ERROR - Failed to connect to WebSocket: 403, message='Invalid response status', url='wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream'
+2026-01-11 21:51:42,358 - ERROR - Error in ASR execution: 403, message='Invalid response status', url='wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream'
+2026-01-11 21:51:42,358 - ERROR - ASR processing failed: 403, message='Invalid response status', url='wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream'
+2026-01-11 21:55:09,943 - INFO - Connected to wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream
+2026-01-11 21:55:09,943 - INFO - Sent full client request with seq: 1
+2026-01-11 21:55:10,028 - INFO - Received response: {'code': 0, 'event': 0, 'is_last_package': False, 'payload_sequence': 1, 'payload_size': 110, 'payload_msg': {'audio_info': {'duration': 0}, 'result': {'additions': {'log_id': '20260111215510502CA48B23AD70ACF657'}, 'text': ''}}}
+2026-01-11 21:55:10,028 - INFO - Sent audio segment with seq: 2 (last: False)
+2026-01-11 21:55:10,102 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 2,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 198
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:10,230 - INFO - Sent audio segment with seq: 3 (last: False)
+2026-01-11 21:55:10,289 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 3,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 398
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:10,432 - INFO - Sent audio segment with seq: 4 (last: False)
+2026-01-11 21:55:10,488 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 4,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 598
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:10,633 - INFO - Sent audio segment with seq: 5 (last: False)
+2026-01-11 21:55:10,695 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 5,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 798
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:10,835 - INFO - Sent audio segment with seq: 6 (last: False)
+2026-01-11 21:55:10,894 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 6,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 998
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:11,037 - INFO - Sent audio segment with seq: 7 (last: False)
+2026-01-11 21:55:11,097 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 7,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1198
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:11,238 - INFO - Sent audio segment with seq: 8 (last: False)
+2026-01-11 21:55:11,302 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 8,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1398
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:11,439 - INFO - Sent audio segment with seq: 9 (last: False)
+2026-01-11 21:55:11,503 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 9,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1598
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:11,640 - INFO - Sent audio segment with seq: 10 (last: False)
+2026-01-11 21:55:11,728 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 10,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1798
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:11,842 - INFO - Sent audio segment with seq: 11 (last: False)
+2026-01-11 21:55:11,904 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 11,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1998
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:55:12,044 - INFO - Sent audio segment with seq: 12 (last: True)
+2026-01-11 21:55:12,279 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": true,
+  "payload_sequence": 12,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 2000
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215510502CA48B23AD70ACF657"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:56:08,271 - INFO - Converting audio to WAV format...
+2026-01-11 21:56:08,409 - ERROR - FFmpeg conversion failed: 
+2026-01-11 21:56:08,409 - ERROR - Failed to read audio data: Audio conversion failed: 
+2026-01-11 21:56:08,409 - ERROR - Error in ASR execution: Audio conversion failed: 
+2026-01-11 21:56:08,409 - ERROR - ASR processing failed: Audio conversion failed: 
+2026-01-11 21:57:13,715 - INFO - Connected to wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream
+2026-01-11 21:57:13,716 - INFO - Sent full client request with seq: 1
+2026-01-11 21:57:13,773 - INFO - Received response: {'code': 0, 'event': 0, 'is_last_package': False, 'payload_sequence': 1, 'payload_size': 110, 'payload_msg': {'audio_info': {'duration': 0}, 'result': {'additions': {'log_id': '20260111215713316B4EBFB2C549A81C2E'}, 'text': ''}}}
+2026-01-11 21:57:13,773 - INFO - Sent audio segment with seq: 2 (last: False)
+2026-01-11 21:57:13,896 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 2,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 198
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:13,974 - INFO - Sent audio segment with seq: 3 (last: False)
+2026-01-11 21:57:14,034 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 3,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 398
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:14,175 - INFO - Sent audio segment with seq: 4 (last: False)
+2026-01-11 21:57:14,281 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 4,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 598
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:14,376 - INFO - Sent audio segment with seq: 5 (last: False)
+2026-01-11 21:57:14,434 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 5,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 798
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:14,577 - INFO - Sent audio segment with seq: 6 (last: False)
+2026-01-11 21:57:14,633 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 6,
+  "payload_size": 112,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 998
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:14,778 - INFO - Sent audio segment with seq: 7 (last: False)
+2026-01-11 21:57:14,836 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 7,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1198
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:14,980 - INFO - Sent audio segment with seq: 8 (last: False)
+2026-01-11 21:57:15,037 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 8,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1398
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:15,181 - INFO - Sent audio segment with seq: 9 (last: False)
+2026-01-11 21:57:15,381 - INFO - Sent audio segment with seq: 10 (last: False)
+2026-01-11 21:57:15,528 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 9,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1598
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:15,544 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 10,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1798
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:15,583 - INFO - Sent audio segment with seq: 11 (last: False)
+2026-01-11 21:57:15,686 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": false,
+  "payload_sequence": 11,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 1998
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}
+2026-01-11 21:57:15,784 - INFO - Sent audio segment with seq: 12 (last: True)
+2026-01-11 21:57:15,969 - INFO - Received response: {
+  "code": 0,
+  "event": 0,
+  "is_last_package": true,
+  "payload_sequence": 12,
+  "payload_size": 113,
+  "payload_msg": {
+    "audio_info": {
+      "duration": 2000
+    },
+    "result": {
+      "additions": {
+        "log_id": "20260111215713316B4EBFB2C549A81C2E"
+      },
+      "text": ""
+    }
+  }
+}

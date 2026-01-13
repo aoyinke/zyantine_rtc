@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ff9a9e 100%);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 182, 193, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 107, 107, 0.5);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 107, 0.7);
+}
+
+/* 动画效果 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* 3D头像容器样式 */
+.avatar-3d-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* 聊天消息样式 */
+.message {
+  @apply p-4 rounded-2xl max-w-[80%] break-words animate-slide-in;
+}
+
+.message.user {
+  @apply bg-gradient-to-r from-primary to-accent text-white rounded-br-sm self-end;
+}
+
+.message.ai {
+  @apply bg-gradient-to-r from-light to-secondary text-dark rounded-bl-sm self-start border-2 border-secondary;
+}
+
+/* 按钮样式 */
+.btn-primary {
+  @apply bg-gradient-to-r from-primary to-accent text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105;
+}
+
+.btn-secondary {
+  @apply bg-white text-primary font-bold py-2 px-6 rounded-full border-2 border-primary shadow-md hover:shadow-lg transition-all duration-300;
+}
+
+/* 状态显示样式 */
+.status-display {
+  @apply bg-gradient-to-r from-light to-secondary rounded-full p-4 min-h-[80px] flex flex-col items-center justify-center transition-all duration-300 border-2 border-secondary;
+}
+
+.status-display.active {
+  @apply border-primary shadow-lg;
+}
+
+.status-display.thinking {
+  @apply animate-pulse-slow;
+}

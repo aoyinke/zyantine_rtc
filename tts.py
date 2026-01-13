@@ -142,19 +142,17 @@ class TextToSpeech:
                     websocket, MsgType.FullServerResponse, EventType.SessionStarted
                 )
 
-                async def send_chars():
-                    for char in text:
-                        synthesis_request = base_request.copy()
-                        synthesis_request["event"] = EventType.TaskRequest
-                        synthesis_request["req_params"]["text"] = char
-                        await task_request(
-                            websocket, json.dumps(synthesis_request).encode(), session_id
-                        )
-                        await asyncio.sleep(0.005)
+                async def send_text():
+                    synthesis_request = base_request.copy()
+                    synthesis_request["event"] = EventType.TaskRequest
+                    synthesis_request["req_params"]["text"] = text
+                    await task_request(
+                        websocket, json.dumps(synthesis_request).encode(), session_id
+                    )
 
                     await finish_session(websocket, session_id)
 
-                send_task = asyncio.create_task(send_chars())
+                send_task = asyncio.create_task(send_text())
 
                 audio_data = bytearray()
                 while True:
@@ -194,6 +192,11 @@ class TextToSpeech:
             return np.array([], dtype=np.int16)
 
     async def synthesize_stream(self, text: str):
+        """流式语音合成"""
+        if not text or not text.strip():
+            logger.warning("Empty text for TTS synthesis")
+            return
+
         try:
             headers = {
                 "X-Api-App-Key": self.appid,
@@ -205,6 +208,7 @@ class TextToSpeech:
             async with websockets.asyncio.client.connect(
                 self.endpoint, additional_headers=headers, max_size=10 * 1024 * 1024
             ) as websocket:
+                logger.info(f"Connected to TTS server for streaming synthesis")
 
                 await start_connection(websocket)
                 await wait_for_event(
@@ -241,43 +245,104 @@ class TextToSpeech:
                     websocket, MsgType.FullServerResponse, EventType.SessionStarted
                 )
 
-                async def send_chars():
-                    for char in text:
-                        synthesis_request = base_request.copy()
-                        synthesis_request["event"] = EventType.TaskRequest
-                        synthesis_request["req_params"]["text"] = char
-                        await task_request(
-                            websocket, json.dumps(synthesis_request).encode(), session_id
-                        )
-                        await asyncio.sleep(0.005)
+                async def send_text():
+                    """发送完整文本"""
+                    synthesis_request = base_request.copy()
+                    synthesis_request["event"] = EventType.TaskRequest
+                    synthesis_request["req_params"]["text"] = text
+                    await task_request(
+                        websocket, json.dumps(synthesis_request).encode(), session_id
+                    )
+                    # 不要立即结束会话，等待音频数据接收完成
 
-                    await finish_session(websocket, session_id)
+                send_task = asyncio.create_task(send_text())
+                logger.info(f"Started streaming TTS for text: {text[:50]}...")
 
-                send_task = asyncio.create_task(send_chars())
+                received_audio_chunks = 0
+                task_finished = False
+                last_audio_time = asyncio.get_event_loop().time()
+                max_wait_time = 10.0  # 最大等待时间（秒）
 
                 while True:
-                    msg = await receive_message(websocket)
+                    try:
+                        # 添加超时机制，避免无限等待
+                        msg = await asyncio.wait_for(
+                            receive_message(websocket),
+                            timeout=max_wait_time
+                        )
 
-                    if msg.type == MsgType.FullServerResponse:
-                        if msg.event == EventType.SessionFinished:
+                        if msg.type == MsgType.FullServerResponse:
+                            if msg.event == EventType.SessionFinished:
+                                logger.info(f"TTS session finished, received {received_audio_chunks} audio chunks")
+                                break
+                            elif msg.event == EventType.TaskFinished:
+                                # 任务完成，等待所有音频数据接收完成
+                                logger.info("TTS task finished, waiting for audio data...")
+                                task_finished = True
+                                # 任务完成后，设置较短的超时时间
+                                max_wait_time = 5.0
+                    
+                    except asyncio.TimeoutError:
+                        logger.warning(f"TTS receive message timeout after {max_wait_time} seconds")
+                        # 超时后，检查是否已经收到任务完成事件和音频数据
+                        if task_finished or received_audio_chunks > 0:
+                            logger.info(f"Timeout but got {received_audio_chunks} audio chunks, finishing TTS")
                             break
-                    elif msg.type == MsgType.AudioOnlyServer:
-                        audio_array = self.convert_mp3_to_pcm(msg.payload)
-                        if len(audio_array) > 0:
-                            yield audio_array
-                    else:
-                        raise RuntimeError(f"TTS conversion failed: {msg}")
+                        else:
+                            logger.error("TTS timeout with no audio data received")
+                            raise
+                    
+                    except Exception as e:
+                        logger.error(f"Error receiving TTS message: {e}")
+                        # 非致命错误，继续处理
+                        continue
+
+                    if msg and msg.type == MsgType.AudioOnlyServer:
+                        try:
+                            audio_array = self.convert_mp3_to_pcm(msg.payload)
+                            if len(audio_array) > 0:
+                                received_audio_chunks += 1
+                                logger.debug(f"Received audio chunk {received_audio_chunks}, size: {len(audio_array)}")
+                                yield audio_array
+                                last_audio_time = asyncio.get_event_loop().time()
+                            else:
+                                logger.warning(f"Empty audio chunk received")
+                        except Exception as e:
+                            logger.error(f"Error converting audio chunk: {e}")
+                            import traceback
+                            traceback.print_exc()
+                    elif msg and msg.type != MsgType.FullServerResponse:
+                        logger.error(f"Unexpected message type: {msg.type}")
+                        break
 
                 await send_task
+                
+                # 手动结束会话
+                logger.info("Finishing TTS session...")
+                try:
+                    await finish_session(websocket, session_id)
+                except Exception as e:
+                    logger.error(f"Error finishing TTS session: {e}")
+                
+                logger.info(f"Streaming TTS completed successfully, received {received_audio_chunks} audio chunks")
 
-                await finish_connection(websocket)
-                await wait_for_event(
-                    websocket, MsgType.FullServerResponse, EventType.ConnectionFinished
-                )
+                try:
+                    await finish_connection(websocket)
+                    await asyncio.wait_for(
+                        wait_for_event(
+                            websocket, MsgType.FullServerResponse, EventType.ConnectionFinished
+                        ),
+                        timeout=5.0
+                    )
+                except Exception as e:
+                    logger.error(f"Error closing TTS connection: {e}")
 
         except Exception as e:
             logger.error(f"TTS streaming error: {e}")
-            yield np.array([], dtype=np.int16)
+            import traceback
+            traceback.print_exc()
+            # 不要在异常块中yield，这会导致生成器无法正确关闭
+            return
 
     def set_voice(self, voice_type: str):
         self.voice_type = voice_type
