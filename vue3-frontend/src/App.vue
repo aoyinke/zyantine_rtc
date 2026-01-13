@@ -1,162 +1,140 @@
 <template>
-  <div class="app-container h-screen w-screen flex flex-col bg-gradient-to-br from-indigo-50 via-purple-50 to-white">
-    <!-- 装饰元素 -->
-    <div class="decorative-elements">
-      <div class="decor-circle decor-circle-1"></div>
-      <div class="decor-circle decor-circle-2"></div>
-      <div class="decor-circle decor-circle-3"></div>
-    </div>
-
-    <!-- 头像区域 -->
-    <div class="avatar-section flex items-center justify-center p-2 bg-white/90 backdrop-blur-md rounded-b-3xl shadow-xl border-b border-indigo-100">
-      <Live2DCharacter ref="live2dCharacter" />
-    </div>
-
-    <!-- 聊天面板区域 -->
-    <div class="chat-section flex-1 bg-white/90 backdrop-blur-md p-6 overflow-hidden border-x border-indigo-100">
-      <ChatPanel />
-    </div>
-
-    <!-- 控制面板区域 -->
-    <div class="control-section bg-white/90 backdrop-blur-md p-6 shadow-lg border-t border-indigo-100">
-      <ControlPanel />
+  <div class="app-container">
+    <h1 class="app-title">AI 语音助手</h1>
+    
+    <div class="main-content">
+      <!-- 左边：聊天对话历史、开始对话按钮和动态显示 -->
+      <div class="left-section">
+        <div class="chat-history-section">
+          <ChatPanel />
+        </div>
+        <div class="control-section">
+          <ControlPanel />
+        </div>
+      </div>
+      
+      <!-- 右边：人物模型 -->
+      <div class="right-section">
+        <Live2DAvatar />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import Live2DCharacter from './components/Live2DCharacter/Live2DCharacter.vue'
-import ChatPanel from './components/ChatPanel/ChatPanel.vue'
-import ControlPanel from './components/ControlPanel/ControlPanel.vue'
-
-const live2dCharacter = ref(null)
-
-// 触发Live2D人物说话动画的方法
-defineExpose({
-  triggerSpeak: () => {
-    if (live2dCharacter.value) {
-      live2dCharacter.value.speak()
-    }
-  }
-})
+import ControlPanel from './components/ControlPanel/ControlPanel.vue';
+import ChatPanel from './components/ChatPanel/ChatPanel.vue';
+import Live2DAvatar from './components/Live2DAvatar/Live2DAvatar.vue';
 </script>
 
-<style scoped>
+<style>
 .app-container {
-  max-width: 800px;
-  margin: 0 auto;
-  box-shadow: 0 0 50px rgba(79, 70, 229, 0.15);
-  max-height: 100vh;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
-}
-
-/* 装饰元素 */
-.decorative-elements {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.decor-circle {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, rgba(124, 58, 237, 0) 70%);
-  animation: float 6s ease-in-out infinite;
-}
-
-.decor-circle-1 {
-  width: 200px;
-  height: 200px;
-  top: -50px;
-  right: -50px;
-  animation-delay: 0s;
-}
-
-.decor-circle-2 {
-  width: 150px;
-  height: 150px;
-  bottom: -30px;
-  left: -30px;
-  animation-delay: 2s;
-}
-
-.decor-circle-3 {
-  width: 100px;
-  height: 100px;
-  top: 50%;
-  left: -20px;
-  animation-delay: 4s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: translateY(-20px) scale(1.1);
-    opacity: 0.8;
-  }
-}
-
-.avatar-section {
-  height: 30vh;
-  min-height: 250px;
-  max-height: 350px;
-  flex-shrink: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 20px;
+  flex-direction: column;
+  background-color: #f5f5f5;
+  overflow: hidden;
 }
 
-.chat-section {
+.app-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  padding: 1rem;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.main-content {
   flex: 1;
-  min-height: 200px;
-  max-height: 40vh;
+  display: flex;
+  overflow: hidden;
+}
+
+.left-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-right: 1px solid #e5e7eb;
+}
+
+.chat-history-section {
+  flex: 1;
+  overflow: hidden;
+  margin-bottom: 1rem;
 }
 
 .control-section {
-  flex-shrink: 0;
-  min-height: 130px;
-  max-height: 20vh;
+  flex: 0 0 auto;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.right-section {
+  flex: 0 0 400px;
+  min-width: 300px;
+  max-width: 500px;
+  background-color: white;
+  position: relative;
+  border-left: 1px solid #e5e7eb;
+}
+
+/* 响应式布局调整 */
+@media (max-width: 1024px) {
+  .right-section {
+    flex: 0 0 350px;
+    min-width: 250px;
+    max-width: 400px;
+  }
 }
 
 @media (max-width: 768px) {
-  .avatar-section {
-    height: 25vh;
-    min-height: 200px;
+  .main-content {
+    flex-direction: column;
   }
   
-  .chat-section {
-    min-height: 150px;
+  .left-section {
+    flex: 2;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
   }
   
-  .control-section {
-    min-height: 120px;
+  .right-section {
+    flex: 1;
+    min-height: 300px;
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .app-title {
+    font-size: 1.25rem;
+    padding: 0.75rem;
+  }
+  
+  .left-section {
+    padding: 0.75rem;
   }
 }
 
-/* 针对小屏幕高度的额外调整 */
-@media (max-height: 600px) {
-  .avatar-section {
-    height: 20vh;
-    min-height: 150px;
+@media (max-width: 480px) {
+  .app-title {
+    font-size: 1.125rem;
+    padding: 0.5rem;
   }
   
-  .chat-section {
-    min-height: 120px;
+  .left-section {
+    padding: 0.5rem;
   }
   
-  .control-section {
-    min-height: 100px;
+  .right-section {
+    min-height: 250px;
   }
 }
 </style>
