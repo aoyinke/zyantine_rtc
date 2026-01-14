@@ -1,38 +1,68 @@
 <template>
-  <div class="control-panel flex flex-col items-center gap-6 px-6 py-4">
+  <div class="control-panel px-6 py-4">
     <!-- 视觉分隔线 -->
-    <div class="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-indigo-200 to-transparent mb-2"></div>
+    <div class="w-full h-px bg-gradient-to-r from-transparent via-secondary to-transparent mb-4"></div>
     
-    <!-- 控制按钮 -->
-    <button 
-      :class="['btn-primary', { 'animate-pulse': isRecording, 'bg-gradient-to-r from-red-500 to-rose-500': isConversationActive }]"
-      @click="toggleConversation"
-      :disabled="isProcessing"
-      class="relative group"
-    >
-      <span class="absolute inset-0 bg-white/10 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-      <svg v-if="!isConversationActive" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 transition-transform duration-300 group-hover:scale-110">
-        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-      </svg>
-      <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 transition-transform duration-300 group-hover:scale-110">
-        <rect x="6" y="4" width="4" height="16"></rect>
-        <rect x="14" y="4" width="4" height="16"></rect>
-      </svg>
-      <span v-if="!isConversationActive" class="transition-transform duration-300 group-hover:scale-105">开始对话</span>
-      <span v-else class="transition-transform duration-300 group-hover:scale-105">停止对话</span>
-    </button>
-    
-    <!-- 状态信息 -->
-    <div class="status-info text-center w-full max-w-xs">
-      <div class="status-icon text-2xl mb-2 transition-all duration-300 animate-bounce-subtle">{{ statusIcon }}</div>
-      <div class="status-text text-sm font-medium text-gray-700 transition-all duration-300">{{ statusText }}</div>
-      <div v-if="showHint" class="hint-text text-xs text-gray-500 mt-2 transition-all duration-300 animate-fade-in">
-        {{ hintText }}
+    <!-- 语音状态条 -->
+    <div class="voice-bar flex flex-col items-center gap-4">
+      <!-- 状态显示 -->
+      <div class="status-display flex flex-col items-center gap-2">
+        <!-- 聆听状态：语音波形动画 -->
+        <div v-if="status === 'recording'" class="wave-container flex gap-2 items-center">
+          <div class="wave"></div>
+          <div class="wave" style="animation-delay: 0.1s"></div>
+          <div class="wave" style="animation-delay: 0.2s"></div>
+          <div class="wave" style="animation-delay: 0.3s"></div>
+          <div class="wave" style="animation-delay: 0.4s"></div>
+        </div>
+        <!-- 思考状态：加载点 -->
+        <div v-else-if="isThinking" class="loading-dots flex gap-2 items-center">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <!-- 初始/结束状态：麦克风图标 -->
+        <div v-else class="mic-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+        </div>
+        
+        <!-- 状态文本 -->
+        <div class="status-text font-medium text-center">{{ statusText }}</div>
+        <div v-if="showHint" class="hint-text text-xs mt-1 animate-fade-in">
+          {{ hintText }}
+        </div>
       </div>
+      
+      <!-- 控制按钮 -->
+      <button 
+        :class="['start-btn', { 'active': isConversationActive }]"
+        @click="toggleConversation"
+        :disabled="isProcessing"
+        class="group"
+      >
+        <div v-if="!isConversationActive" class="button-content">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon transition-transform duration-300 group-hover:scale-110">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span class="text">和我聊聊</span>
+        </div>
+        <div v-else class="button-content">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon transition-transform duration-300 group-hover:scale-110">
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+          <span class="text">停止聊天</span>
+        </div>
+      </button>
     </div>
     
     <!-- 视觉分隔线 -->
-    <div class="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-indigo-200 to-transparent mt-2"></div>
+    <div class="w-full h-px bg-gradient-to-r from-transparent via-secondary to-transparent mt-4"></div>
   </div>
 </template>
 
@@ -55,53 +85,26 @@ const hintText = ref('')
 // 计算属性：获取当前状态
 const status = computed(() => chatStore.status)
 
-// 计算属性：状态图标
-const statusIcon = computed(() => {
-  switch (status.value) {
-    case 'connected':
-      return '🔗'
-    case 'recording':
-      return '🎤'
-    case 'processing':
-      return '🤔'
-    case 'generating':
-      return '💭'
-    case 'synthesizing':
-      return '🎵'
-    case 'playing':
-      return '🔊'
-    case 'error':
-      return '⚠️'
-    default:
-      return '👋'
-  }
-})
-
 // 计算属性：状态文本
 const statusText = computed(() => {
   switch (status.value) {
     case 'connected':
-      return '已连接到服务器'
+      return '小叶已准备就绪～'
     case 'recording':
-      return '正在聆听，请开始说话...'
+      return '我在听呢，请说...'
     case 'processing':
-      return '正在识别语音...'
+      return '让我想想...'
     case 'generating':
-      return 'AI 正在思考...'
+      return '正在思考中...'
     case 'synthesizing':
-      return '正在生成语音...'
+      return '准备回答你...'
     case 'playing':
-      return '正在播放...'
+      return '我在说话哦...'
     case 'error':
-      return chatStore.errorMessage || '发生错误'
+      return chatStore.errorMessage || '哎呀，出错了...'
     default:
-      return '你好！点击按钮开始对话'
+      return '你好！点击按钮和我聊天吧'
   }
-})
-
-// 计算属性：是否为活跃状态
-const isActive = computed(() => {
-  return ['recording', 'processing', 'generating', 'synthesizing', 'playing'].includes(status.value)
 })
 
 // 计算属性：是否为思考状态
@@ -179,70 +182,201 @@ async function stopConversation() {
 .control-panel {
   width: 100%;
   padding: 16px 0;
+  background: var(--bg);
+  transition: all 0.3s ease;
 }
 
-.btn-primary {
+.voice-bar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-display {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+/* 波形动画容器 */
+.wave-container {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--secondary);
+  transition: all 0.3s ease;
+}
+
+/* 波形动画 */
+.wave {
+  width: 6px;
+  height: 24px;
+  background: var(--primary);
+  border-radius: 3px;
+  animation: wave 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes wave {
+  0% { transform: scaleY(0.3); }
+  100% { transform: scaleY(1); }
+}
+
+/* 加载点动画 */
+.loading-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--secondary);
+  transition: all 0.3s ease;
+}
+
+.loading-dots span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  margin: 0 2px;
+  animation: bounce 1s infinite;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* 麦克风图标 */
+.mic-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  max-width: 200px;
-  padding: 16px 28px;
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  width: 48px;
+  height: 48px;
+  background: var(--bg);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+  border: 2px solid var(--secondary);
+  color: var(--primary);
+  transition: all 0.3s ease;
+}
+
+/* 状态文本 */
+.status-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.hint-text {
+  font-size: 12px;
+  color: var(--text-light);
+  text-align: center;
+  max-width: 250px;
+  transition: all 0.3s ease;
+}
+
+/* 开始按钮 */
+.start-btn {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   color: white;
+  padding: 14px 28px;
+  border-radius: 25px;
   border: none;
-  border-radius: 28px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
   position: relative;
   overflow: hidden;
 }
 
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.6);
+.start-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: rotate(45deg);
+  animation: shine 3s ease-in-out infinite;
 }
 
-.btn-primary:active:not(:disabled) {
+.button-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.text {
+  white-space: nowrap;
+}
+
+.start-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.start-btn:active:not(:disabled) {
   transform: translateY(0) scale(0.98);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.btn-primary:disabled {
+.start-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* 录音状态动画 */
-.animate-pulse {
-  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.start-btn.active {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.2);
 }
 
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
-  }
-  50% {
-    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.8);
-  }
+.start-btn.active:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
 }
 
-/* 微妙的弹跳动画 */
-@keyframes bounce-subtle {
-  0%, 100% {
-    transform: translateY(0);
+/* 新增动画效果 */
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
   }
-  50% {
-    transform: translateY(-3px);
+  100% {
+    transform: translateX(100%) rotate(45deg);
   }
-}
-
-.animate-bounce-subtle {
-  animation: bounce-subtle 3s ease-in-out infinite;
 }
 
 /* 淡入动画 */
@@ -261,46 +395,39 @@ async function stopConversation() {
   animation: fade-in 0.5s ease-out forwards;
 }
 
-/* 控制按钮的渐变背景（停止对话状态） */
-.btn-primary.bg-gradient-to-r {
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
-}
-
-.btn-primary.bg-gradient-to-r:hover:not(:disabled) {
-  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.6);
-}
-
-.status-info {
-  width: 100%;
-}
-
-.status-icon {
-  color: #6366f1;
-}
-
-.status-text {
-  color: #374151;
-}
-
-.hint-text {
-  max-width: 250px;
-  margin: 0 auto;
-}
-
 /* 响应式调整 */
 @media (max-width: 768px) {
   .control-panel {
-    gap: 4;
     padding: 12px 0;
   }
   
-  .btn-primary {
-    padding: 12px 20px;
-    font-size: 13px;
+  .voice-bar {
+    gap: 12px;
   }
   
-  .status-icon {
-    font-size: 1.5rem;
+  .wave-container,
+  .loading-dots {
+    padding: 8px;
+  }
+  
+  .wave {
+    width: 4px;
+    height: 20px;
+  }
+  
+  .loading-dots span {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .mic-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .mic-icon svg {
+    width: 20px;
+    height: 20px;
   }
   
   .status-text {
@@ -308,7 +435,18 @@ async function stopConversation() {
   }
   
   .hint-text {
-    font-size: 11px;
+    font-size: 10px;
+  }
+  
+  .start-btn {
+    padding: 10px 20px;
+    font-size: 13px;
+    min-width: 140px;
+  }
+  
+  .start-btn svg {
+    width: 18px;
+    height: 18px;
   }
 }
 </style>

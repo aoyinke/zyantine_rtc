@@ -4,39 +4,80 @@
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
       </svg>
-      对话记录
+      和小叶的聊天
     </div>
     <div class="chat-history flex-1 overflow-y-auto p-4 flex flex-col gap-4" ref="chatHistoryRef">
       <!-- 空状态 -->
-      <div v-if="messages.length === 0" class="empty-state flex flex-col items-center justify-center h-full text-gray-400">
-        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+      <div v-if="messages.length === 0" class="empty-state flex flex-col items-center justify-center h-full">
+        <div class="empty-state-background"></div>
+        <div class="microphone-icon animate-float animate-pulse-slow">
+          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="11" r="8"></circle>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+            <line x1="15" y1="9" x2="15.01" y2="9"></line>
           </svg>
         </div>
-        <div class="text-lg font-medium">还没有对话记录</div>
-        <div class="text-sm mt-2">点击下方按钮开始与 AI 交流吧！</div>
+        <div class="empty-state-title">嗨～我是小叶同学</div>
+        <div class="empty-state-subtitle">点击下方按钮，和我聊聊天吧！</div>
+        <div class="empty-state-tips animate-fade-in">
+          <span>✨ 你可以和我分享你的生活，或者问我任何问题哦</span>
+        </div>
       </div>
       
       <!-- 聊天消息 -->
-      <div
-        v-for="(message, index) in messages"
-        :key="index"
-        :class="['message-wrapper', message.sender === 'user' ? 'user-message' : 'ai-message']"
-      >
-        <div class="message-content" :class="message.sender === 'user' ? 'user-content' : 'ai-content'">
-          <div class="message-text">{{ message.text }}</div>
-          <div class="message-time">{{ message.timestamp }}</div>
+      <TransitionGroup name="bubble" tag="div" class="messages-container">
+        <div
+          v-for="(message, index) in messages"
+          :key="index"
+          :class="['message-wrapper', message.sender === 'user' ? 'user-message' : 'ai-message']"
+        >
+          <!-- 小叶头像 -->
+          <div v-if="message.sender === 'ai'" class="message-avatar ai-avatar">
+            <div class="avatar-circle">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+                <path d="M12 12v2"></path>
+                <path d="M12 16v1"></path>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="message-content" :class="message.sender === 'user' ? 'user-content' : 'ai-content'">
+            <div class="message-text">{{ message.text }}</div>
+            <div class="message-time">{{ message.timestamp }}</div>
+          </div>
+          
+          <!-- 用户头像 -->
+          <div v-if="message.sender === 'user'" class="message-avatar user-avatar">
+            <div class="avatar-circle">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <!-- 流式AI回复 -->
-      <div v-if="currentAIMessage" class="message-wrapper ai-message">
-        <div class="message-content ai-content">
-          <div class="message-text">{{ currentAIMessage }}</div>
-          <div class="message-time">{{ new Date().toLocaleTimeString('zh-CN') }}</div>
+        
+        <!-- 流式AI回复 -->
+        <div v-if="currentAIMessage" class="message-wrapper ai-message">
+          <div class="message-avatar ai-avatar">
+            <div class="avatar-circle">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+                <path d="M12 12v2"></path>
+                <path d="M12 16v1"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="message-content ai-content">
+            <div class="message-text typing-effect">{{ currentAIMessage }}<span v-if="isTyping" class="typing-indicator"></span></div>
+            <div class="message-time">{{ new Date().toLocaleTimeString('zh-CN') }}</div>
+          </div>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
   </div>
 </template>
@@ -54,11 +95,18 @@ const messages = computed(() => chatStore.messages)
 // 计算属性：获取当前AI流式回复
 const currentAIMessage = computed(() => chatStore.currentAIMessage)
 
+// 计算属性：是否正在输入
+const isTyping = computed(() => chatStore.isStreaming)
+
 // 自动滚动到最新消息
 function scrollToBottom() {
   nextTick(() => {
     if (chatHistoryRef.value) {
-      chatHistoryRef.value.scrollTop = chatHistoryRef.value.scrollHeight
+      // 平滑滚动
+      chatHistoryRef.value.scrollTo({
+        top: chatHistoryRef.value.scrollHeight,
+        behavior: 'smooth'
+      })
     }
   })
 }
@@ -79,103 +127,469 @@ watch(() => currentAIMessage.value, () => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: var(--bg);
+  transition: all 0.3s ease;
 }
 
 .chat-header {
   flex-shrink: 0;
+  color: var(--primary);
+  border-bottom-color: var(--secondary);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  transform: translateX(-100%);
+  animation: headerGradient 3s ease-in-out infinite;
 }
 
 .chat-history {
   flex: 1;
   overflow-y: auto;
   scroll-behavior: smooth;
+  position: relative;
 }
 
 /* 滚动条样式 */
 .chat-history::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .chat-history::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--bg);
   border-radius: 10px;
 }
 
 .chat-history::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--secondary);
   border-radius: 10px;
+  transition: all 0.3s ease;
 }
 
 .chat-history::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--primary);
+  transform: scale(1.1);
+}
+
+.chat-history::-webkit-scrollbar-thumb:active {
+  background: var(--primary);
+  transform: scale(0.9);
+}
+
+/* 消息容器 */
+.messages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* 消息样式 */
 .message-wrapper {
   display: flex;
-  margin-bottom: 12px;
+  align-items: flex-end;
+  gap: 10px;
+  animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .user-message {
-  justify-content: flex-end;
+  flex-direction: row-reverse;
 }
 
 .ai-message {
-  justify-content: flex-start;
+  flex-direction: row;
 }
 
-.message-content {
-  max-width: 80%;
-  padding: 12px 16px;
-  border-radius: 18px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+/* 头像样式 */
+.message-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
 }
 
-.user-content {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-circle::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: rotate(45deg);
+  animation: shine 3s ease-in-out infinite;
+}
+
+.ai-avatar .avatar-circle {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
-  border-bottom-right-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-avatar .avatar-circle {
+  background: linear-gradient(135deg, var(--user-bubble), var(--info));
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.avatar-circle:hover {
+  transform: scale(1.15) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.avatar-circle svg {
+  position: relative;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+}
+
+/* 消息内容 */
+.message-content {
+  max-width: 75%;
+  padding: 16px 20px;
+  border-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.message-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.message-content:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.message-content:hover::before {
+  left: 100%;
+}
+
+.user-content {
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  color: white;
+  border-bottom-right-radius: 8px;
 }
 
 .ai-content {
-  background: white;
-  color: #374151;
-  border-bottom-left-radius: 4px;
-  border: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, var(--bg-light), var(--secondary-light));
+  color: var(--text-primary);
+  border-bottom-left-radius: 8px;
 }
 
 .message-text {
   font-size: 14px;
-  line-height: 1.4;
-  margin-bottom: 4px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  word-wrap: break-word;
+  position: relative;
 }
 
 .message-time {
   font-size: 11px;
   opacity: 0.7;
   text-align: right;
+  color: inherit;
+  font-weight: 500;
 }
 
-.user-content .message-time {
-  color: rgba(255, 255, 255, 0.8);
+/* 打字机效果 */
+.typing-effect {
+  position: relative;
 }
 
-.ai-content .message-time {
-  color: #9ca3af;
+.typing-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 4px;
+  position: relative;
+}
+
+.typing-indicator::before, .typing-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+  animation: typingDots 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator::before {
+  left: 0;
+  animation-delay: -0.32s;
+}
+
+.typing-indicator::after {
+  left: 8px;
+  animation-delay: 0.32s;
+}
+
+.typing-indicator {
+  animation: typingDots 1.4s infinite ease-in-out both;
 }
 
 /* 空状态样式 */
 .empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 80px 20px;
+  position: relative;
+  z-index: 1;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.empty-state-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='0.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 60px 60px;
+  opacity: 0.05;
+  z-index: -1;
+  animation: backgroundMove 20s linear infinite;
+}
+
+.microphone-icon {
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, var(--bg), var(--secondary));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+  color: var(--primary);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2);
+  border: 3px solid var(--secondary);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.microphone-icon::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+  transform: rotate(45deg);
+  animation: shine 3s ease-in-out infinite;
+}
+
+.microphone-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.3);
+}
+
+.empty-state-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state-subtitle {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 24px;
+  transition: all 0.3s ease;
+}
+
+.empty-state-tips {
+  font-size: 13px;
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--secondary);
+  transition: all 0.3s ease;
+}
+
+.empty-state-tips:hover {
+  background: rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
+}
+
+/* 动画效果 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes typingDots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes headerGradient {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes backgroundMove {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 100px 100px;
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(45deg);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+/* 消息气泡动画 */
+.bubble-enter-from {
+  opacity: 0;
+  transform: translateY(30px) scale(0.85);
+}
+
+.bubble-enter-active {
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bubble-move {
+  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bubble-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.bubble-leave-active {
+  transition: all 0.3s ease;
+}
+
+.bubble-leave-to {
+  opacity: 0;
+  transform: scale(0.8);
 }
 
 /* 响应式调整 */
 @media (max-width: 768px) {
   .message-content {
-    max-width: 85%;
-    padding: 10px 14px;
+    max-width: 80%;
+    padding: 12px 16px;
   }
   
   .message-text {
@@ -184,6 +598,70 @@ watch(() => currentAIMessage.value, () => {
   
   .message-time {
     font-size: 10px;
+  }
+  
+  .message-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .avatar-circle {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .avatar-circle svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .empty-state {
+    padding: 60px 16px;
+  }
+  
+  .microphone-icon {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 24px;
+  }
+  
+  .microphone-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .empty-state-title {
+    font-size: 18px;
+  }
+  
+  .empty-state-subtitle {
+    font-size: 13px;
+  }
+  
+  .empty-state-tips {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-content {
+    max-width: 85%;
+    padding: 10px 14px;
+  }
+  
+  .message-text {
+    font-size: 12px;
+  }
+  
+  .message-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .avatar-circle {
+    width: 28px;
+    height: 28px;
   }
 }
 </style>
