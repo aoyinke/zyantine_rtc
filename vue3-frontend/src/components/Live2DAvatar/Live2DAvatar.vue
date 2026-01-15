@@ -43,11 +43,59 @@ const bubbleText = ref('');
 // 气泡显示计时器
 const bubbleTimer = ref(null);
 
+// 动作管理
+const actionQueue = ref([]);
+const isActionPlaying = ref(false);
+const currentAction = ref(null);
+
+// 表情参数
+const expressionParams = ref({
+  happiness: 0,
+  sadness: 0,
+  surprise: 0,
+  anger: 0
+});
+
 // 聊天存储
 const chatStore = useChatStore();
 
 // 模型路径
 const modelPath = '/live2d-models/hiyori_pro_zh/hiyori_pro_t11.model3.json';
+
+// 可用动作列表
+const availableActions = {
+  idle: ['Idle'],
+  tap: ['Tap'],
+  tapBody: ['Tap@Body'],
+  flick: ['Flick'],
+  flickDown: ['FlickDown'],
+  flickUp: ['FlickUp']
+};
+
+// 动作优先级
+const actionPriorities = {
+  tap: 3,
+  tapBody: 3,
+  flick: 2,
+  flickDown: 2,
+  flickUp: 2,
+  idle: 1
+};
+
+// 关键词到动作的映射
+const keywordToAction = {
+  你好: 'idle',
+  嗨: 'idle',
+  早上好: 'idle',
+  晚上好: 'idle',
+  谢谢: 'idle',
+  谢谢: 'idle',
+  真棒: 'idle',
+  厉害: 'idle',
+  为什么: 'idle',
+  什么: 'idle',
+  怎么: 'idle'
+};
 
 // 计算属性：获取当前AI消息
 const currentAIMessage = computed(() => chatStore.currentAIMessage);
@@ -100,11 +148,22 @@ const loadModel = async () => {
     model.value.autoInteract = true; // 启用自动交互
     console.log('自动交互已启用');
     
+    // 初始化表情参数
+    initExpressionParams();
+    
   } catch (error) {
     console.error('加载模型失败:', error);
     console.error('错误详情:', error.message);
   } finally {
     is_loading.value = false;
+  }
+};
+
+// 初始化表情参数
+const initExpressionParams = () => {
+  if (model.value && model.value.internalModel) {
+    const params = model.value.internalModel.parameters;
+    console.log('可用参数:', params);
   }
 };
 
@@ -145,24 +204,306 @@ const showBubbleMessage = (text) => {
   }, 3000);
 };
 
+// 动作管理器 - 添加动作到队列
+const addActionToQueue = (actionType, priority = 1) => {
+  if (!model.value) return;
+  
+  // 检查动作是否存在
+  if (!availableActions[actionType]) {
+    console.warn(`动作类型 ${actionType} 不存在`);
+    return;
+  }
+  
+  // 创建动作对象
+  const action = {
+    type: actionType,
+    priority: priority,
+    timestamp: Date.now()
+  };
+  
+  // 添加到队列
+  actionQueue.value.push(action);
+  
+  // 排序队列（按优先级和时间戳）
+  actionQueue.value.sort((a, b) => {
+    if (a.priority !== b.priority) {
+      return b.priority - a.priority;
+    }
+    return a.timestamp - b.timestamp;
+  });
+  
+  // 如果没有动作在播放，开始执行队列
+  if (!isActionPlaying.value) {
+    processActionQueue();
+  }
+};
+
+// 处理动作队列
+const processActionQueue = async () => {
+  if (actionQueue.value.length === 0 || isActionPlaying.value) return;
+  
+  // 获取下一个动作
+  const nextAction = actionQueue.value.shift();
+  currentAction.value = nextAction;
+  isActionPlaying.value = true;
+  
+  try {
+    // 执行动作
+    await playAction(nextAction.type);
+  } catch (error) {
+    console.error('执行动作失败:', error);
+  } finally {
+    isActionPlaying.value = false;
+    currentAction.value = null;
+    
+    // 继续处理队列
+    if (actionQueue.value.length > 0) {
+      processActionQueue();
+    }
+  }
+};
+
+// 播放动作
+const playAction = async (actionType) => {
+  if (!model.value) return;
+  
+  try {
+    const actions = availableActions[actionType];
+    if (actions && actions.length > 0) {
+      // 随机选择一个动作
+      const randomAction = actions[Math.floor(Math.random() * actions.length)];
+      console.log('播放动作:', randomAction);
+      
+      // 播放动作
+      await model.value.motion(randomAction);
+    }
+  } catch (error) {
+    console.warn('动作执行失败:', error);
+    // 尝试使用默认动作
+    try {
+      await model.value.motion('Idle');
+    } catch (e) {
+      console.warn('默认动作也执行失败:', e);
+    }
+  }
+};
+
+// 设置表情
+const setExpression = (expression, intensity = 1) => {
+  if (!model.value || !model.value.internalModel) return;
+  
+  // 重置所有表情参数
+  Object.keys(expressionParams.value).forEach(key => {
+    expressionParams.value[key] = 0;
+  });
+  
+  // 设置目标表情
+  if (expressionParams.value.hasOwnProperty(expression)) {
+    expressionParams.value[expression] = intensity;
+  }
+  
+  // 应用表情参数
+  applyExpression();
+};
+
+// 应用表情
+const applyExpression = () => {
+  if (!model.value || !model.value.internalModel) return;
+  
+  const params = model.value.internalModel.parameters;
+  
+  // 根据表情参数调整模型参数
+  // 这里需要根据具体模型的参数名称进行调整
+  if (params) {
+    // 示例：调整眉毛和嘴巴参数
+    // 实际参数名称需要根据模型配置进行修改
+    if (params['ParamBrowUplift']) {
+      params['ParamBrowUplift'] = expressionParams.value.happiness * 0.5 - expressionParams.value.sadness * 0.3;
+    }
+    
+    if (params['ParamMouthSmile']) {
+      params['ParamMouthSmile'] = expressionParams.value.happiness * 0.5 - expressionParams.value.sadness * 0.3 - expressionParams.value.anger * 0.2;
+    }
+    
+    if (params['ParamEyeOpen']) {
+      params['ParamEyeOpen'] = 1.0 - expressionParams.value.sadness * 0.2;
+    }
+  }
+};
+
+// 情感识别
+const analyzeEmotion = (text) => {
+  if (!text) return 'neutral';
+  
+  const lowerText = text.toLowerCase();
+  
+  // 正面情感关键词
+  const positiveKeywords = ['好', '开心', '高兴', '谢谢', '真棒', '厉害', '喜欢', '爱', '棒', '优秀'];
+  
+  // 负面情感关键词
+  const negativeKeywords = ['不', '不好', '难过', '伤心', '生气', '讨厌', '恨', '坏', '差', '糟糕'];
+  
+  // 疑问关键词
+  const questionKeywords = ['?', '？', '为什么', '什么', '怎么', '怎样', '哪里', '何时', '谁'];
+  
+  // 惊讶关键词
+  const surpriseKeywords = ['！', '!', '哇', '哦', '啊', '天哪', '真的吗', '不敢相信'];
+  
+  // 检测情感
+  for (const keyword of positiveKeywords) {
+    if (lowerText.includes(keyword)) {
+      return 'happy';
+    }
+  }
+  
+  for (const keyword of negativeKeywords) {
+    if (lowerText.includes(keyword)) {
+      return 'sad';
+    }
+  }
+  
+  for (const keyword of surpriseKeywords) {
+    if (lowerText.includes(keyword)) {
+      return 'surprised';
+    }
+  }
+  
+  for (const keyword of questionKeywords) {
+    if (lowerText.includes(keyword)) {
+      return 'questioning';
+    }
+  }
+  
+  return 'neutral';
+};
+
+// 根据文本触发动作
+const triggerActionFromText = (text) => {
+  if (!text) return;
+  
+  // 分析情感
+  const emotion = analyzeEmotion(text);
+  console.log('识别到情感:', emotion);
+  
+  // 根据情感设置表情
+  switch (emotion) {
+    case 'happy':
+      setExpression('happiness', 0.8);
+      addActionToQueue('idle', 2);
+      break;
+    case 'sad':
+      setExpression('sadness', 0.8);
+      addActionToQueue('idle', 2);
+      break;
+    case 'surprised':
+      setExpression('surprise', 0.8);
+      addActionToQueue('flick', 3);
+      break;
+    case 'questioning':
+      addActionToQueue('idle', 2);
+      break;
+    default:
+      setExpression('happiness', 0.3);
+      addActionToQueue('idle', 1);
+  }
+  
+  // 检测关键词
+  const lowerText = text.toLowerCase();
+  for (const [keyword, action] of Object.entries(keywordToAction)) {
+    if (lowerText.includes(keyword)) {
+      addActionToQueue(action, 2);
+      break;
+    }
+  }
+};
+
 // 鼠标进入事件
 const onMouseEnter = () => {
   // 触发眨眼和轻微歪头动作
   if (model.value) {
-    // 这里可以根据模型的具体动作名称进行调整
-    try {
-      model.value.motion('Idle');
-      // 显示欢迎气泡
-      showBubbleMessage('你好呀！有什么可以帮你的吗？');
-    } catch (error) {
-      console.log('动作不存在，使用默认动作');
-    }
+    addActionToQueue('idle', 2);
+    // 显示欢迎气泡
+    showBubbleMessage('你好呀！有什么可以帮你的吗？');
+    // 设置开心表情
+    setExpression('happiness', 0.5);
   }
 };
 
 // 鼠标离开事件
 const onMouseLeave = () => {
-  // 可以添加离开时的动作
+  // 重置表情
+  setExpression('happiness', 0.1);
+};
+
+// 鼠标移动事件
+const onMouseMove = (event) => {
+  if (!model.value) return;
+  
+  // 获取鼠标位置
+  const rect = liveCanvas.value.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  
+  // 获取容器中心
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 2;
+  
+  // 计算鼠标与中心的距离
+  const dx = (x - centerX) / centerX;
+  const dy = (y - centerY) / centerY;
+  
+  // 限制移动范围
+  const maxRotation = 0.1;
+  const rotationX = Math.max(-maxRotation, Math.min(maxRotation, -dy * 0.5));
+  const rotationY = Math.max(-maxRotation, Math.min(maxRotation, dx * 0.5));
+  
+  // 应用旋转
+  if (model.value.internalModel) {
+    const params = model.value.internalModel.parameters;
+    if (params) {
+      if (params['ParamAngleX']) {
+        params['ParamAngleX'] = rotationX;
+      }
+      if (params['ParamAngleY']) {
+        params['ParamAngleY'] = rotationY;
+      }
+    }
+  }
+};
+
+// 鼠标点击事件
+const onMouseClick = (event) => {
+  if (!model.value) return;
+  
+  // 获取点击位置
+  const rect = liveCanvas.value.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  
+  // 获取容器中心
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 2;
+  
+  // 计算点击位置与中心的距离
+  const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+  
+  // 根据点击位置触发不同动作
+  if (distance < 100) {
+    // 点击头部
+    addActionToQueue('tap', 3);
+    showBubbleMessage('哎呀，你戳到我了！');
+    setExpression('surprise', 0.8);
+  } else if (distance < 200) {
+    // 点击身体
+    addActionToQueue('tapBody', 3);
+    showBubbleMessage('哈哈，好痒！');
+    setExpression('happiness', 0.8);
+  } else {
+    // 点击其他位置
+    addActionToQueue('tap', 2);
+    showBubbleMessage('你好！');
+    setExpression('happiness', 0.5);
+  }
 };
 
 // 监听AI消息变化
@@ -171,11 +512,9 @@ watch(currentAIMessage, (newMessage) => {
     showBubbleMessage(newMessage);
     // 触发说话动作
     if (model.value) {
-      try {
-        model.value.motion('Idle');
-      } catch (error) {
-        console.log('动作不存在，使用默认动作');
-      }
+      addActionToQueue('idle', 2);
+      // 分析消息内容，触发相应动作
+      triggerActionFromText(newMessage);
     }
   }
 });
@@ -187,21 +526,15 @@ watch(chatStatus, (newStatus) => {
     case 'generating':
       // 触发思考动作
       if (model.value) {
-        try {
-          model.value.motion('Idle');
-        } catch (error) {
-          console.log('动作不存在，使用默认动作');
-        }
+        addActionToQueue('idle', 2);
+        setExpression('happiness', 0.2);
       }
       break;
     case 'playing':
       // 触发说话动作
       if (model.value) {
-        try {
-          model.value.motion('Idle');
-        } catch (error) {
-          console.log('动作不存在，使用默认动作');
-        }
+        addActionToQueue('idle', 2);
+        setExpression('happiness', 0.5);
       }
       break;
   }
@@ -237,20 +570,13 @@ onMounted(async () => {
   // 初始加载模型
   await loadModel();
   
-  // 添加点击事件监听
+  // 添加事件监听
   if (model.value) {
-    model.value.on('pointerdown', (event) => {
-      console.log('模型被点击', event.data.global);
-      // 触发点击动作
-      if (model.value) {
-        console.log('触发点击动作');
-        try {
-          model.value.motion('Tap');
-        } catch (error) {
-          console.log('动作不存在，使用默认动作');
-        }
-      }
-    });
+    // 点击事件
+    model.value.on('pointerdown', onMouseClick);
+    
+    // 鼠标移动事件
+    liveCanvas.value.addEventListener('mousemove', onMouseMove);
   }
   
   // 添加窗口大小变化监听
@@ -261,6 +587,11 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   // 移除窗口大小变化监听
   window.removeEventListener('resize', resizeModel);
+  
+  // 移除鼠标移动事件监听
+  if (liveCanvas.value) {
+    liveCanvas.value.removeEventListener('mousemove', onMouseMove);
+  }
   
   // 清除计时器
   if (bubbleTimer.value) {

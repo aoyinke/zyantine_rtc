@@ -1,0 +1,26 @@
+{
+  "zyantine": {
+    "api_key": "",
+    "base_url": "http://localhost:8001",
+    "model": "zyantine-v1"
+  },
+  "stt": {
+    "bytedance": {
+      "app_key": "",
+      "access_key": "",
+      "ws_url": "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_nostream"
+    }
+  },
+  "tts": {
+    "volcengine": {
+      "appid": "",
+      "access_token": "",
+      "voice_type": "zh_female_vv_uranus_bigtts",
+      "endpoint": "wss://openspeech.bytedance.com/api/v3/tts/bidirection"
+    }
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8765
+  }
+}

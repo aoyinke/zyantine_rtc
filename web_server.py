@@ -12,7 +12,9 @@ import base64
 import struct
 import uuid
 
-from ai_rtc_system import AIRTCSystem
+from ai_rtc_system import AIRTCSystem, ConfigManager
+
+config_manager = ConfigManager()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -149,9 +151,9 @@ async def handle_connect(websocket: WebSocket, data: dict, session_id: str):
         client_id = data.get("client_id", "web_client")
         room_id = data.get("room_id", "web_room")
         
-        # 从环境变量获取字节跳动ASR的配置
-        stt_app_key = os.getenv("BYTEDANCE_APP_KEY", "5474947932")
-        stt_access_key = os.getenv("BYTEDANCE_ACCESS_KEY", "q-ZhU5ZhND2Xva_cGEgZYSuN5NpCMQ6c")
+        # 从配置文件获取字节跳动ASR的配置
+        stt_app_key = config_manager.get("stt.bytedance.app_key") or "5474947932"
+        stt_access_key = config_manager.get("stt.bytedance.access_key") or "q-ZhU5ZhND2Xva_cGEgZYSuN5NpCMQ6c"
         
         system = AIRTCSystem(
             signaling_url=signaling_url,
@@ -436,4 +438,6 @@ async def process_speech_and_respond_stream(websocket: WebSocket, session_id: st
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8765)
+    host = config_manager.get("server.host") or "0.0.0.0"
+    port = config_manager.get("server.port") or 8765
+    uvicorn.run(app, host=host, port=port)

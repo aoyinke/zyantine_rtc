@@ -34,12 +34,14 @@ class TextToSpeech:
         appid: Optional[str] = None,
         access_token: Optional[str] = None,
         voice_type: str = "zh_female_vv_uranus_bigtts",
+        emotion: str = "neutral",
         target_sample_rate: int = 16000,
         endpoint: str = "wss://openspeech.bytedance.com/api/v3/tts/bidirection"
     ):
         self.appid = appid or os.getenv("VOLCENGINE_APPID", "5474947932")
         self.access_token = access_token or os.getenv("VOLCENGINE_ACCESS_TOKEN", "q-ZhU5ZhND2Xva_cGEgZYSuN5NpCMQ6c")
         self.voice_type = voice_type
+        self.emotion = emotion
         self.target_sample_rate = target_sample_rate
         self.endpoint = endpoint
 
@@ -119,6 +121,7 @@ class TextToSpeech:
                     "namespace": "BidirectionalTTS",
                     "req_params": {
                         "speaker": self.voice_type,
+                        "emotion": self.emotion,
                         "audio_params": {
                             "format": "mp3",
                             "sample_rate": 24000,
@@ -222,6 +225,7 @@ class TextToSpeech:
                     "namespace": "BidirectionalTTS",
                     "req_params": {
                         "speaker": self.voice_type,
+                        "emotion": self.emotion,
                         "audio_params": {
                             "format": "mp3",
                             "sample_rate": 24000,
@@ -351,3 +355,10 @@ class TextToSpeech:
     def set_voice_type(self, voice_type: str):
         self.voice_type = voice_type
         logger.info(f"Voice type changed to {voice_type}")
+
+    def set_emotion(self, emotion: str):
+        self.emotion = emotion
+        logger.info(f"Emotion changed to {emotion}")
+
+    def get_emotion(self) -> str:
+        return self.emotion

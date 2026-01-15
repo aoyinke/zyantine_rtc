@@ -1,17 +1,61 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Virtual Environment
 env/
 venv/
 ENV/
 .venv
-.env
-*.egg-info/
+
+# Build
 dist/
 build/
+*.egg-info/
+
+# System
 .DS_Store
+
+# Audio
 *.wav
 *.mp3
 *.flac
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Config
+.env
+config.json
+
+# Logs
+*.log
+logs/
+
+# Vue 3 Frontend
+vue3-frontend/node_modules/
+vue3-frontend/.npm
+vue3-frontend/dist/
+vue3-frontend/.nuxt
+vue3-frontend/.output
+vue3-frontend/.vercel
+vue3-frontend/.eslintcache
+vue3-frontend/package-lock.json
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
