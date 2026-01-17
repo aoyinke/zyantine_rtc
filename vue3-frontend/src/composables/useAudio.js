@@ -110,12 +110,7 @@ export function useAudio() {
     try {
       console.log('=== Handling user stopped speaking ===')
       
-      // 停止录音
-      console.log('Stopping recording...')
-      await stopRecording()
-      console.log('Recording stopped successfully')
-      
-      // 发送停止录音消息
+      // 发送停止录音消息（但不实际停止录音设备）
       console.log('Sending stop recording message...')
       if (sendMessage) {
         sendMessage({ type: 'stop_recording' })
@@ -124,22 +119,13 @@ export function useAudio() {
         console.error('sendMessage is not initialized')
       }
       
-      // 调用停止对话回调
-      console.log('Calling stop conversation callback...')
-      if (stopConversationCallback) {
-        stopConversationCallback()
-        console.log('Stop conversation callback called')
-      } else {
-        console.error('stopConversationCallback is not set')
-      }
-    } catch (error) {
-      console.error('Error handling user stopped speaking:', error)
-    } finally {
-      // 重置VAD状态
+      // 重置VAD状态，准备下一轮监听
       console.log('Resetting VAD state...')
       resetVAD()
       console.log('VAD state reset')
       console.log('=== User stopped speaking handling complete ===')
+    } catch (error) {
+      console.error('Error handling user stopped speaking:', error)
     }
   }
   
@@ -318,6 +304,14 @@ export function useAudio() {
             audioStore.setPlaying(false)
             audioStore.setCurrentSource(null)
             console.log('All audio playback completed')
+            console.log('=== Ready for next user input ===')
+            // 播放完成后，重置VAD状态，准备监听用户下一次说话
+            resetVAD()
+            // 更新聊天状态为connected，准备接受用户下一次输入
+            import('../stores/chat').then(({ useChatStore }) => {
+              const chatStore = useChatStore()
+              chatStore.setStatus('connected')
+            })
           }
         }, 10) // 10ms的延迟
       }

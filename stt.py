@@ -11,6 +11,8 @@ import struct
 import gzip
 import uuid
 from dotenv import load_dotenv
+from audio_utils import convert_audio_format
+from error_handler import async_error_handler, STTError, AudioError, NetworkError
 
 load_dotenv()
 
@@ -291,15 +293,34 @@ class AsrWsClient:
             
     async def create_connection(self) -> None:
         headers = RequestBuilder.new_auth_headers(self.config)
-        try:
-            self.conn = await self.session.ws_connect(
-                self.url,
-                headers=headers
-            )
-            logger.info(f"Connected to {self.url}")
-        except Exception as e:
-            logger.error(f"Failed to connect to WebSocket: {e}")
-            raise
+        max_retries = 3
+        retry_delay = 2  # 秒
+        
+        for attempt in range(max_retries):
+            try:
+                self.conn = await self.session.ws_connect(
+                    self.url,
+                    headers=headers,
+                    timeout=10.0  # 设置10秒超时
+                )
+                logger.info(f"Connected to {self.url}")
+                return
+            except Exception as e:
+                error_msg = f"Failed to connect to WebSocket (attempt {attempt + 1}/{max_retries}): {e}"
+                logger.error(error_msg)
+                
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 1.5  # 指数退避
+                else:
+                    # 最后一次尝试失败，抛出更友好的错误信息
+                    if "DNS" in str(e) or "timeout" in str(e).lower():
+                        raise NetworkError(
+                            "Network connection failed: Unable to resolve DNS or connect to the server. Please check your network connection and try again.",
+                            {"url": self.url, "error": str(e)}
+                        )
+                    raise
             
     async def send_full_client_request(self) -> None:
         request = RequestBuilder.new_full_client_request(self.seq)
@@ -380,6 +401,7 @@ class AsrWsClient:
             except asyncio.CancelledError:
                 pass
                 
+    @async_error_handler
     async def execute(self, audio_bytes: bytes) -> str:
         if not audio_bytes:
             raise ValueError("Audio data is empty")
@@ -428,17 +450,9 @@ class SpeechToText:
         sample_rate: int = 16000,
         target_format: str = "wav"
     ) -> bytes:
-        buffer = io.BytesIO()
-        
-        with wave.open(buffer, 'wb') as wav_file:
-            wav_file.setnchannels(1)
-            wav_file.setsampwidth(audio_data.dtype.itemsize)
-            wav_file.setframerate(sample_rate)
-            wav_file.writeframes(audio_data.tobytes())
-        
-        buffer.seek(0)
-        return buffer.read()
+        return convert_audio_format(audio_data, sample_rate, target_format)
 
+    @async_error_handler
     async def transcribe(
         self,
         audio_data: np.ndarray,
@@ -458,6 +472,7 @@ class SpeechToText:
             logger.error(f"Transcription error: {e}")
             return ""
 
+    @async_error_handler
     async def transcribe_with_vad(
         self,
         audio_chunks: list[np.ndarray],
@@ -469,14 +484,36 @@ class SpeechToText:
                 logger.warning("No audio chunks provided for transcription")
                 return ""
 
-            combined_audio = np.concatenate(audio_chunks)
+            # 创建VAD处理器
+            vad_processor = VADProcessor(sample_rate=sample_rate)
+            speech_segments = []
+            
+            logger.info(f"Processing {len(audio_chunks)} audio chunks with VAD")
+            
+            # 处理每个音频块，提取语音段
+            for chunk in audio_chunks:
+                is_speech_end, complete_speech = vad_processor.process_chunk(chunk)
+                if complete_speech:
+                    speech_segments.extend(complete_speech)
+            
+            # 处理可能剩余的语音段
+            if vad_processor.speech_chunks:
+                speech_segments.extend(vad_processor.speech_chunks)
+                vad_processor.reset()
+            
+            if not speech_segments:
+                logger.info("No speech detected in audio chunks")
+                return ""
+            
+            # 合并语音段
+            combined_audio = np.concatenate(speech_segments)
             
             min_samples = int(0.1 * sample_rate)
             if len(combined_audio) < min_samples:
-                logger.warning(f"Audio too short: {len(combined_audio)} samples, minimum required: {min_samples}")
+                logger.warning(f"Audio too short after VAD: {len(combined_audio)} samples, minimum required: {min_samples}")
                 return ""
             
-            logger.info(f"Transcribing audio: {len(combined_audio)} samples, sample rate: {sample_rate}Hz")
+            logger.info(f"Transcribing speech: {len(combined_audio)} samples, sample rate: {sample_rate}Hz")
             result = await self.transcribe(combined_audio, sample_rate, language)
             logger.info(f"Transcription result: {result[:50]}..." if result else "No transcription result")
             return result

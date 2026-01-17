@@ -1,39 +1,13 @@
 import asyncio
-import logging
 import numpy as np
 import os
-import json
 from stt import SpeechToText
 from tts import TextToSpeech
 from ai_conversation import ConversationManager
+from config import config_manager
+from logger import get_logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-class ConfigManager:
-    def __init__(self, config_file="config.json"):
-        self.config_file = config_file
-        self.config = self.load_config()
-    
-    def load_config(self):
-        try:
-            with open(self.config_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to load config file: {e}")
-            return {}
-    
-    def get(self, key, default=None):
-        keys = key.split(".")
-        value = self.config
-        for k in keys:
-            if isinstance(value, dict) and k in value:
-                value = value[k]
-            else:
-                return default
-        return value
-
-config_manager = ConfigManager()
+logger = get_logger(__name__)
 
 
 class AIRTCSystem:
@@ -52,8 +26,11 @@ class AIRTCSystem:
 
         # 获取字节跳动ASR的配置
         try:
-            asr_app_key = stt_app_key or config_manager.get("stt.bytedance.app_key") or "5474947932"
-            asr_access_key = stt_access_key or config_manager.get("stt.bytedance.access_key") or "q-ZhU5ZhND2Xva_cGEgZYSuN5NpCMQ6c"
+            asr_app_key = stt_app_key or config_manager.get("stt.bytedance.app_key")
+            asr_access_key = stt_access_key or config_manager.get("stt.bytedance.access_key")
+            
+            if not asr_app_key or not asr_access_key:
+                raise ValueError("STT configuration missing: app_key and access_key are required")
             
             self.stt = SpeechToText(
                 api_key=asr_access_key,
@@ -66,10 +43,13 @@ class AIRTCSystem:
             raise
 
         try:
-            tts_appid = config_manager.get("tts.volcengine.appid") or "5474947932"
-            tts_access_token = config_manager.get("tts.volcengine.access_token") or "q-ZhU5ZhND2Xva_cGEgZYSuN5NpCMQ6c"
+            tts_appid = config_manager.get("tts.volcengine.appid")
+            tts_access_token = config_manager.get("tts.volcengine.access_token")
             tts_voice_type = config_manager.get("tts.volcengine.voice_type") or "zh_female_vv_uranus_bigtts"
             tts_endpoint = config_manager.get("tts.volcengine.endpoint") or "wss://openspeech.bytedance.com/api/v3/tts/bidirection"
+            
+            if not tts_appid or not tts_access_token:
+                raise ValueError("TTS configuration missing: appid and access_token are required")
             
             self.tts = TextToSpeech(
                 appid=tts_appid,

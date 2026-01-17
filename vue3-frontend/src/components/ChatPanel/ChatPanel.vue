@@ -1,14 +1,28 @@
 <template>
-  <div class="chat-panel h-full flex flex-col">
+  <div 
+    class="chat-panel h-full flex flex-col" 
+    role="region" 
+    aria-label="电话对话聊天面板" 
+    tabindex="0" 
+    @keydown.arrow-down="scrollToBottom" 
+    @keydown.arrow-up="scrollToTop"
+  >
     <div class="chat-header text-xl font-bold text-indigo-600 mb-4 pb-2 border-b border-indigo-100 flex items-center gap-2">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
       </svg>
       和小叶的聊天
     </div>
-    <div class="chat-history flex-1 overflow-y-auto p-4 flex flex-col gap-4" ref="chatHistoryRef">
+    <div 
+      class="chat-history flex-1 overflow-y-auto p-4 flex flex-col gap-4" 
+      ref="chatHistoryRef"
+      role="log"
+      aria-live="polite"
+      aria-atomic="false"
+      tabindex="0"
+    >
       <!-- 空状态 -->
-      <div v-if="messages.length === 0" class="empty-state flex flex-col items-center justify-center h-full">
+      <div v-if="messages.length === 0" class="empty-state flex flex-col items-center justify-center h-full" role="status" aria-live="polite">
         <div class="empty-state-background"></div>
         <div class="microphone-icon animate-float animate-pulse-slow">
           <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -26,43 +40,90 @@
       </div>
       
       <!-- 聊天消息 -->
-      <TransitionGroup name="bubble" tag="div" class="messages-container">
-        <div
-          v-for="(message, index) in messages"
-          :key="index"
-          :class="['message-wrapper', message.sender === 'user' ? 'user-message' : 'ai-message']"
-        >
-          <!-- 小叶头像 -->
-          <div v-if="message.sender === 'ai'" class="message-avatar ai-avatar">
-            <div class="avatar-circle">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-                <path d="M12 12v2"></path>
-                <path d="M12 16v1"></path>
-              </svg>
+        <TransitionGroup name="bubble" tag="div" class="messages-container" aria-label="聊天消息">
+          <!-- 消息项 -->
+          <template v-for="(message, index) in messages" :key="index">
+            <!-- 时间分隔线 -->
+            <div
+              v-if="shouldShowTimeSeparator(index)"
+              class="time-separator"
+              :aria-label="`时间分隔：${formatTimeSeparator(message.timestamp)}`"
+              role="separator"
+              aria-orientation="horizontal"
+            >
+              <span class="time-separator-text">{{ formatTimeSeparator(message.timestamp) }}</span>
             </div>
-          </div>
-          
-          <div class="message-content" :class="message.sender === 'user' ? 'user-content' : 'ai-content'">
-            <div class="message-text">{{ message.text }}</div>
-            <div class="message-time">{{ message.timestamp }}</div>
-          </div>
-          
-          <!-- 用户头像 -->
-          <div v-if="message.sender === 'user'" class="message-avatar user-avatar">
-            <div class="avatar-circle">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
+            
+            <!-- 消息分组 -->
+            <div
+              :class="[
+                'message-wrapper',
+                message.sender === 'user' ? 'user-message' : 'ai-message',
+                { 'group-first': isGroupFirst(index), 'group-middle': isGroupMiddle(index), 'group-last': isGroupLast(index) }
+              ]"
+              role="group"
+              :aria-label="message.sender === 'user' ? '用户消息组' : 'AI消息组'"
+            >
+              <!-- 只有分组第一个消息显示头像 -->
+              <div 
+                v-if="isGroupFirst(index) && message.sender === 'ai'" 
+                class="message-avatar ai-avatar"
+                role="img"
+                aria-label="AI助手头像"
+                tabindex="0"
+                @keydown.enter="focusChatHistory"
+              >
+                <div class="avatar-circle">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                    <path d="M12 12v2"></path>
+                    <path d="M12 16v1"></path>
+                  </svg>
+                </div>
+              </div>
+              
+              <!-- 消息内容 -->
+              <div 
+                class="message-content" 
+                :class="message.sender === 'user' ? 'user-content' : 'ai-content'"
+                role="dialog"
+                :aria-label="message.sender === 'user' ? '用户消息' : 'AI回复'"
+                tabindex="0"
+                @keydown.enter="focusChatHistory"
+              >
+                <div class="message-text" tabindex="0">{{ message.text }}</div>
+                <div class="message-time" tabindex="0">{{ message.timestamp }}</div>
+              </div>
+              
+              <!-- 只有分组第一个消息显示头像 -->
+              <div 
+                v-if="isGroupFirst(index) && message.sender === 'user'" 
+                class="message-avatar user-avatar"
+                role="img"
+                aria-label="用户头像"
+                tabindex="0"
+                @keydown.enter="focusChatHistory"
+              >
+                <div class="avatar-circle">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </template>
         
-        <!-- 流式AI回复 -->
-        <div v-if="currentAIMessage" class="message-wrapper ai-message">
-          <div class="message-avatar ai-avatar">
+        <!-- AI正在思考状态 -->
+        <div 
+          v-if="isTyping && !currentAIMessage" 
+          class="message-wrapper ai-message"
+          role="status"
+          aria-live="polite"
+          aria-label="AI正在思考"
+        >
+          <div class="message-avatar ai-avatar" role="img" aria-label="AI助手头像">
             <div class="avatar-circle">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -73,7 +134,48 @@
             </div>
           </div>
           <div class="message-content ai-content">
-            <div class="message-text typing-effect">{{ currentAIMessage }}<span v-if="isTyping" class="typing-indicator"></span></div>
+            <div class="message-text ai-is-thinking">
+              <span class="thinking-text">正在思考...</span>
+              <span class="thinking-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2a10 10 0 0 0-9.95 9h11.64L9.74 7.05A1 1 0 0 1 10.7 6h2.61A10 10 0 0 0 12 2z"></path>
+                  <path d="M12 22a10 10 0 0 0 9.95-9h-11.64L14.26 16.95A1 1 0 0 1 13.3 18h-2.61A10 10 0 0 0 12 22z"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="message-time">{{ new Date().toLocaleTimeString('zh-CN') }}</div>
+          </div>
+        </div>
+        
+        <!-- 流式AI回复 -->
+        <div 
+          v-if="currentAIMessage" 
+          class="message-wrapper ai-message"
+          role="group"
+          aria-label="AI流式回复"
+        >
+          <div class="message-avatar ai-avatar" role="img" aria-label="AI助手头像">
+            <div class="avatar-circle">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+                <path d="M12 12v2"></path>
+                <path d="M12 16v1"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="message-content ai-content">
+            <div class="message-text typing-effect">
+              {{ currentAIMessage }}
+              <span 
+                v-if="isTyping" 
+                class="typing-indicator"
+                role="status"
+                aria-label="正在输入"
+              >
+                <span aria-hidden="true"></span>
+              </span>
+            </div>
             <div class="message-time">{{ new Date().toLocaleTimeString('zh-CN') }}</div>
           </div>
         </div>
@@ -120,6 +222,68 @@ watch(() => messages.value.length, () => {
 watch(() => currentAIMessage.value, () => {
   scrollToBottom()
 })
+
+// 滚动到顶部
+function scrollToTop() {
+  nextTick(() => {
+    if (chatHistoryRef.value) {
+      chatHistoryRef.value.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      })
+    }
+  })
+}
+
+// 聚焦到聊天历史区域
+function focusChatHistory() {
+  nextTick(() => {
+    if (chatHistoryRef.value) {
+      chatHistoryRef.value.focus()
+    }
+  })
+}
+
+// 时间分隔线逻辑：超过5分钟显示时间分隔
+function shouldShowTimeSeparator(index) {
+  if (index === 0) return true
+  
+  const currentMsg = messages.value[index]
+  const prevMsg = messages.value[index - 1]
+  
+  // 解析时间字符串
+  const currentTime = new Date(`2000-01-01 ${currentMsg.timestamp}`)
+  const prevTime = new Date(`2000-01-01 ${prevMsg.timestamp}`)
+  
+  // 如果时间差超过5分钟，显示分隔线
+  return Math.abs(currentTime - prevTime) > 5 * 60 * 1000
+}
+
+// 格式化时间分隔显示
+function formatTimeSeparator(timestamp) {
+  const date = new Date(`2000-01-01 ${timestamp}`)
+  return date.toLocaleTimeString('zh-CN', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  })
+}
+
+// 消息分组逻辑：同一发送者连续发送的消息为一组
+function isGroupFirst(index) {
+  if (index === 0) return true
+  return messages.value[index].sender !== messages.value[index - 1].sender
+}
+
+function isGroupMiddle(index) {
+  if (index === 0 || index === messages.value.length - 1) return false
+  return messages.value[index].sender === messages.value[index - 1].sender && 
+         messages.value[index].sender === messages.value[index + 1].sender
+}
+
+function isGroupLast(index) {
+  if (index === messages.value.length - 1) return true
+  return messages.value[index].sender !== messages.value[index + 1].sender
+}
 </script>
 
 <style scoped>
@@ -192,12 +356,44 @@ watch(() => currentAIMessage.value, () => {
   gap: 16px;
 }
 
+/* 时间分隔线 */
+.time-separator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0;
+  position: relative;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.time-separator::before,
+.time-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--secondary-light), transparent);
+  margin: 0 12px;
+}
+
+.time-separator-text {
+  background: var(--bg);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 1;
+  animation: pulse 1s ease-out;
+}
+
 /* 消息样式 */
 .message-wrapper {
   display: flex;
   align-items: flex-end;
   gap: 10px;
   animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  margin-bottom: 4px;
 }
 
 .user-message {
@@ -206,6 +402,59 @@ watch(() => currentAIMessage.value, () => {
 
 .ai-message {
   flex-direction: row;
+}
+
+/* 消息分组样式 */
+.message-wrapper.group-first .message-content {
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+}
+
+.message-wrapper.group-middle .message-content {
+  border-radius: 16px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.message-wrapper.group-last .message-content {
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+}
+
+/* 用户消息分组 */
+.user-message.group-first .message-content {
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 24px;
+}
+
+.user-message.group-middle .message-content {
+  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: 16px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.user-message.group-last .message-content {
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 24px;
+}
+
+/* AI消息分组 */
+.ai-message.group-first .message-content {
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 24px;
+}
+
+.ai-message.group-middle .message-content {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.ai-message.group-last .message-content {
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 24px;
 }
 
 /* 头像样式 */
@@ -217,6 +466,19 @@ watch(() => currentAIMessage.value, () => {
   align-items: center;
   justify-content: center;
   position: relative;
+  animation: avatarSlideIn 0.3s ease-out;
+}
+
+/* 头像滑动动画 */
+@keyframes avatarSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .avatar-circle {
@@ -226,12 +488,14 @@ watch(() => currentAIMessage.value, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
+/* 头像呼吸光效 */
 .avatar-circle::before {
   content: '';
   position: absolute;
@@ -239,26 +503,63 @@ watch(() => currentAIMessage.value, () => {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   transform: rotate(45deg);
   animation: shine 3s ease-in-out infinite;
+}
+
+/* 头像脉冲效果 */
+.avatar-circle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.avatar-circle:hover::after {
+  transform: scale(1.2);
+  opacity: 1;
 }
 
 .ai-avatar .avatar-circle {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.2);
+  animation: aiAvatarPulse 2s ease-in-out infinite;
+}
+
+/* AI头像脉冲动画 */
+@keyframes aiAvatarPulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    transform: scale(1.05);
+  }
 }
 
 .user-avatar .avatar-circle {
-  background: linear-gradient(135deg, var(--user-bubble), var(--info));
-  color: var(--text-primary);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
   border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .avatar-circle:hover {
-  transform: scale(1.15) translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  transform: scale(1.15) translateY(-2px) rotate(5deg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.avatar-circle:active {
+  transform: scale(1.1) translateY(-1px) rotate(2deg);
 }
 
 .avatar-circle svg {
@@ -266,6 +567,25 @@ watch(() => currentAIMessage.value, () => {
   z-index: 1;
   width: 24px;
   height: 24px;
+  transition: all 0.3s ease;
+}
+
+.avatar-circle:hover svg {
+  transform: scale(1.2);
+  animation: avatarSvgSpin 0.6s ease-out;
+}
+
+/* 头像图标旋转动画 */
+@keyframes avatarSvgSpin {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3) rotate(10deg);
+  }
+  100% {
+    transform: scale(1.2);
+  }
 }
 
 /* 消息内容 */
@@ -276,8 +596,10 @@ watch(() => currentAIMessage.value, () => {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   position: relative;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  background: var(--bg);
   overflow: hidden;
+  animation: messageAppear 0.3s ease-out;
+  border: 1px solid transparent;
+  transform-origin: bottom right;
 }
 
 .message-content::before {
@@ -287,29 +609,124 @@ watch(() => currentAIMessage.value, () => {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   transition: left 0.6s ease;
 }
 
+/* 增强的消息悬停效果 */
 .message-content:hover {
   transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .message-content:hover::before {
   left: 100%;
 }
 
-.user-content {
-  background: linear-gradient(135deg, var(--primary-light), var(--primary));
-  color: white;
-  border-bottom-right-radius: 8px;
+/* 用户消息悬停效果增强 */
+.user-content:hover {
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
 }
 
+/* AI消息悬停效果增强 */
+.ai-content:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* 消息发送成功的涟漪效果 */
+.user-message .message-content::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E") no-repeat center center;
+  background-size: 14px;
+  opacity: 0.7;
+  animation: sendSuccess 0.5s ease-out;
+}
+
+/* 发送成功动画 */
+@keyframes sendSuccess {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+}
+
+/* 增强版消息出现动画 */
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* 用户消息样式 - 电话风格的气泡 */
+.user-content {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  border-bottom-right-radius: 6px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  border-bottom-left-radius: 24px;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.2);
+  margin-right: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* AI消息样式 - 电话风格的气泡 */
 .ai-content {
-  background: linear-gradient(135deg, var(--bg-light), var(--secondary-light));
+  background: linear-gradient(135deg, #ffffff, #f3f4f6);
   color: var(--text-primary);
-  border-bottom-left-radius: 8px;
+  border-bottom-left-radius: 6px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  border-bottom-right-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  margin-left: 8px;
+  border: 1px solid rgba(209, 213, 219, 0.5);
+}
+
+/* 消息状态指示器 */
+.user-message .message-content::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E") no-repeat center center;
+  background-size: 14px;
+  opacity: 0.7;
+}
+
+/* 消息出现动画 */
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .message-text {
@@ -328,43 +745,84 @@ watch(() => currentAIMessage.value, () => {
   font-weight: 500;
 }
 
+/* AI正在思考状态 - 电话风格的"正在输入"提示 */
+.ai-is-typing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #ffffff, #f3f4f6);
+  border-radius: 24px;
+  border-bottom-left-radius: 6px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  border-bottom-right-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  margin-left: 8px;
+  animation: fadeInUp 0.3s ease-out;
+}
+
 /* 打字机效果 */
 .typing-effect {
   position: relative;
 }
 
+/* 增强版打字指示器 */
 .typing-indicator {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  margin-left: 4px;
-  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
-.typing-indicator::before, .typing-indicator::after {
+/* 打字指示器的点 */
+.typing-indicator::before,
+.typing-indicator::after,
+.typing-indicator span {
   content: '';
-  position: absolute;
-  top: 0;
-  width: 4px;
-  height: 4px;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: currentColor;
-  opacity: 0.7;
+  background: var(--primary);
   animation: typingDots 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator span {
+  margin: 0 2px;
 }
 
 .typing-indicator::before {
-  left: 0;
   animation-delay: -0.32s;
 }
 
+.typing-indicator span {
+  animation-delay: 0s;
+}
+
 .typing-indicator::after {
-  left: 8px;
   animation-delay: 0.32s;
 }
 
-.typing-indicator {
-  animation: typingDots 1.4s infinite ease-in-out both;
+/* 思考状态文本 */
+.thinking-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+/* 思考状态的大脑图标 */
+.thinking-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+  animation: brainPulse 2s ease-in-out infinite;
+  margin-right: 8px;
 }
 
 /* 空状态样式 */
@@ -465,6 +923,17 @@ watch(() => currentAIMessage.value, () => {
   }
 }
 
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
 @keyframes pulse-slow {
   0%, 100% {
     opacity: 1;
@@ -504,6 +973,30 @@ watch(() => currentAIMessage.value, () => {
   40% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+/* 大脑脉冲动画 */
+@keyframes brainPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* 消息出现动画 */
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

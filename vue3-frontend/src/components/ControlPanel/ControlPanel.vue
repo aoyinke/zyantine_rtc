@@ -136,20 +136,13 @@ async function startConversation() {
       await connect()
     }
     
-    // 定义停止对话回调函数
-    function onUserStoppedSpeaking() {
-      console.log('User stopped speaking, updating UI...')
-      isConversationActive.value = false
-      showHint.value = false
-    }
-    
-    // 开始录音（传递回调函数）
-    await startRecording(onUserStoppedSpeaking)
+    // 开始录音（不传递结束回调，实现持续对话）
+    await startRecording()
     
     // 更新状态
     isConversationActive.value = true
     showHint.value = true
-    hintText.value = '说话结束后会自动停止录音'
+    hintText.value = '正在持续对话，点击按钮结束'
     
     // 通知服务器开始录音
     sendMessage({ type: 'start_recording' })

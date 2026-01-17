@@ -132,8 +132,11 @@ export const useChatStore = defineStore('chat', {
             break
           
           case 'ai_text':
-            // 只需要调用completeAIMessage()，因为currentAIMessage已经包含了完整的回复
-            this.completeAIMessage()
+            // 使用消息中的text字段，确保不包含情绪标签
+            if (message.text) {
+              this.addMessage('ai', message.text)
+              this.currentAIMessage = ''
+            }
             break
           
           case 'ai_text_chunk':
@@ -213,7 +216,7 @@ export const useChatStore = defineStore('chat', {
         // 添加到音频队列并播放
         queueAudio(audioBuffer)
         
-        this.setStatus('idle')
+        // 不立即设置为idle，等待播放完成后再设置为connected
         console.log('Audio response processed successfully')
       } catch (error) {
         console.error('Error processing audio response:', error)
@@ -362,7 +365,8 @@ export const useChatStore = defineStore('chat', {
         this.audioQueue = []
         console.log('Cleared audio queue')
         
-        this.setStatus('idle')
+        // 不立即设置为idle，保持playing状态，等待音频播放完成
+        // 音频播放完成后由useAudio.js中的playAudio函数处理状态更新
         this.audioProcessing.isProcessing = false
         console.log('Set audioProcessing.isProcessing to false (completed)')
         console.log(`Audio queue processed successfully, merged ${pcmDataArray.length}/${totalChunks} chunks`)

@@ -595,6 +595,10 @@
             currentAIMessageId = null;
             
             if (data.text && data.text.trim()) {
+                // 获取情绪信息
+                const emotion = data.emotion || 'neutral';
+                console.log('AI response emotion:', emotion);
+                
                 // 如果需要，也可以更新最终消息
                 const messages = conversationHistory.querySelectorAll('.message.ai');
                 if (messages.length > 0) {
@@ -676,6 +680,10 @@
                     view[i] = audioData.charCodeAt(i);
                 }
                 
+                // 获取情绪信息
+                const emotion = data.emotion || 'neutral';
+                console.log('Audio response emotion:', emotion);
+                
                 audioContext.decodeAudioData(arrayBuffer, (buffer) => {
                     const source = audioContext.createBufferSource();
                     source.buffer = buffer;
@@ -686,7 +694,7 @@
                     };
                     source.start(0);
                     
-                    updateStatus('playing', '🔊', '正在播放...');
+                    updateStatus('playing', '🔊', `正在播放... (情绪: ${emotion})`);
                     avatarMouth.classList.add('speaking');
                 }, (error) => {
                     console.error('Audio decode error:', error);
@@ -714,7 +722,7 @@
             }
         }
 
-        function addMessage(sender, text) {
+        function addMessage(sender, text, emotion = null) {
             if (!conversationStarted) {
                 conversationStarted = true;
                 conversationHistory.innerHTML = '';
@@ -726,10 +734,12 @@
             const now = new Date();
             const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
             
-            messageDiv.innerHTML = `
+            let messageHTML = `
                 <div>${escapeHtml(text)}</div>
                 <div class="message-time">${timeStr}</div>
             `;
+            
+            messageDiv.innerHTML = messageHTML;
             
             conversationHistory.appendChild(messageDiv);
             conversationHistory.scrollTop = conversationHistory.scrollHeight;
